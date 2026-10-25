@@ -7,7 +7,7 @@
 | Dokument | Stand |
 |---|---|
 | Dokumentation | README v0.2 · 25. Oktober 2026 |
-| Beschriebene Softwarebasis | Integrierte Suite v0.1 mit gemeinsamer Governance-Ebene v0.1 |
+| Beschriebene Softwarebasis | Integrierte Suite v0.2 mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
 | Fachbereiche | 8 eigenständig nutzbare Module |
 | Fachmethoden im untersuchten Paket | 469 Markdown-Methodendateien |
 | Zielgruppe | Unternehmen, Selbstständige, Fachleute und Agenturen; **keine** Agentur- oder Kundenverwaltung als Voraussetzung |
@@ -689,6 +689,8 @@ Die Suite soll ohne proprietäres Datenmodell betrieben werden können. Die geme
 
 **Die Verträge sind für strukturierte Übergaben gedacht – nicht für jeden kleinen Chatbeitrag verpflichtend.**
 
+Eine Freigabe (`decision: approved`) muss ab v0.2 über `review_refs` auf Prüfberichte genau der freigegebenen Artefaktversion verweisen – mindestens eine fachlich-technische (G2) und eine rechtliche bzw. datenschutzbezogene Prüfung (G3). Autorisierende und Risikoakzeptierende sind Menschen oder verantwortliche Rollen, nie ein KI-System. Wie die modulspezifischen Status- und Freigabefelder auf diese Verträge abgebildet werden, beschreibt [`.suite/INTERFACES.md`](.suite/INTERFACES.md).
+
 ### 14.1 Beispiel: Übergreifender Arbeitsauftrag
 
 Die Datei [`.suite/beispiele/topaca-work-order.json`](.suite/beispiele/topaca-work-order.json) ist ein vorhandenes Beispiel. Das folgende reduzierte Muster entspricht den Grundfeldern des aktuellen Schemas:
@@ -757,7 +759,7 @@ Es gibt eine bewusste Trennung zwischen **Arbeitsstand**, **Ereignisprotokoll** 
 | `archiv/` | Originale und erforderliche historische Versionen | Unkontrolliert angehäufte personenbezogene Rohdaten |
 | `input/` | Temporär eingehende Unterlagen | Dauerarchiv ohne Sichtung/Übernahme |
 
-Die Root-Dateien `.suite/STATE.md`, `.suite/LOG.md` und `.suite/HISTORY.md` sind **nur für fachübergreifende Aufträge** gedacht. Innerhalb der Module bleiben die lokalen Zustandsdateien zuständig. Manche ursprünglichen Module haben eigene Varianten der Ablage; diese sind vor Änderungen zu beachten.
+Die Root-Dateien `.suite/STATE.md`, `.suite/LOG.md` und `.suite/HISTORY.md` sind **nur für fachübergreifende Aufträge** gedacht. Innerhalb der Module bleiben die lokalen Zustandsdateien zuständig. Manche ursprünglichen Module haben eigene Varianten der Ablage; diese sind vor Änderungen zu beachten. So führt `website/` seine Historie als Verzeichnis `.nocms/HISTORY/` mit Register (`README.md`) und projektbezogenes Quellenwissen unter `.nocms/KNOWLEDGE/`.
 
 ### 15.1 Unterbrechung und Wiederaufnahme
 
@@ -999,8 +1001,11 @@ Im Suite-Root:
 
 ```bash
 python3 .suite/tools/validate_records.py work-order .suite/beispiele/topaca-work-order.json
+python3 .suite/tools/validate_records.py bundle .suite/beispiele/demo-freigabe-bundle.json
 python3 -m unittest discover -s .suite/tests -v
 ```
+
+Der Modus `bundle` prüft Artefakte, Reviews und Freigaben gemeinsam: Hash und Version der Freigabe müssen zum Artefakt passen, G2- und G3-Reviews vorliegen, blockierende Reviews fehlen und `published` eine bestätigte Ausführung haben. `.suite/tests` enthält außerdem eine Strukturprüfung aller Module (Kerndateien, Suite-Verweis in den Regeln, interne Pfade, Nachbarmodule, Website-Grundgerüst).
 
 Ein erfolgreicher Preflight zeigt beispielsweise:
 
@@ -1202,8 +1207,8 @@ Die derzeitige Suite ist ein **umfangreicher fachlicher und organisatorischer Pr
 ### 25.3 Wichtige Feststellungen zum Entwicklungsstand
 
 - Die acht Fachmodule liegen in der untersuchten integrierten ZIP-Version vor.
-- Die gemeinsame Governance-Schicht ist als **additive v0.1-Erweiterung** integriert.
-- Die einzelnen Fach-`AGENT.md`-Dateien sind **nicht** in einem gemeinsamen Release automatisch umgeschrieben worden; direkte Starts müssen die übergreifenden Regeln gegebenenfalls noch gezielt einbinden.
+- Die gemeinsame Governance-Schicht ist als **additive Erweiterung** integriert (v0.2).
+- Die Fach-`AGENT.md`-Dateien sind **nicht** umgeschrieben worden. Seit v0.2 verweist jedoch jede Modul-`RULES.md` (noCRM: `REGELN.md`) auf die Suite-Mindeststandards, sodass sie bei Außenwirkung auch bei direktem Modulstart gelten; ohne `.suite/` arbeiten die Module unverändert eigenständig.
 - Die Suite enthält **offene Verträge und einzelne lokale Prüfwerkzeuge**, aber keine automatisch betriebsbereiten Live-Integrationen.
 - Die Rechtsquellen-Datei enthält einen dokumentierten Recherche-Stand; Rechts- und Plattformänderungen danach müssen erneut geprüft werden.
 - Die Wirksamkeit der vollständigen Suite im konkreten Harness ist **noch nicht durch End-to-End-Abnahmetests nachgewiesen**.
