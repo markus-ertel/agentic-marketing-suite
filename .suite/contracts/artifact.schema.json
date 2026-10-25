@@ -75,5 +75,6 @@
     "notes": {
       "type": "string"
     }
-  }
+  },
+  "$comment": "Suite contract v0.2. status approved/published requires sha256 and rights_status != pending."
 }

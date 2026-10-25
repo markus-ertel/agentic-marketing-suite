@@ -69,6 +69,7 @@ def main():
     commands.extend([
         ['advertising/.advertising/tools/test_workspace.py'],
         ['.suite/tools/validate_records.py', 'work-order', '.suite/beispiele/topaca-work-order.json'],
+        ['.suite/tools/validate_records.py', 'bundle', '.suite/beispiele/demo-freigabe-bundle.json'],
         ['social-media/.social-media/tools/validate_job.py', 'social-media/.social-media/integrationen/BEISPIEL_JOB.json'],
         ['advertising/.advertising/tools/validate_manifest.py', 'advertising/.advertising/beispiele/DRAFT_MANIFEST_DEMO.json'],
     ])

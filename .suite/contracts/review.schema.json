@@ -80,7 +80,8 @@
             "minLength": 4
           },
           "evidence_ref": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1
           },
           "fix": {
             "type": "string"
@@ -97,6 +98,16 @@
     },
     "notes": {
       "type": "string"
+    },
+    "risk_accepted_by": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Authorized human/role accepting a warning risk (QUALITY.md)."
+    },
+    "risk_accepted_at": {
+      "type": "string",
+      "format": "date-time"
     }
-  }
+  },
+  "$comment": "Suite contract v0.2. pass: no major/critical findings + evidence; blocked: >=1 major/critical finding; warning: >=1 finding + risk_accepted_by; not_applicable: notes required."
 }

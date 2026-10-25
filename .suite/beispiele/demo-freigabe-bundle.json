@@ -1,0 +1,61 @@
+{
+  "artifacts": [
+    {
+      "id": "art-topaca-landing",
+      "owner_module": "website",
+      "path": "website/site/index.html",
+      "version": 1,
+      "status": "approved",
+      "sha256": "5205057c4aaa41cf0243dfb50c27067921016fae1f7b4fbb09a02a48f90c977f",
+      "source_refs": ["marketing/strategie/briefing.md"],
+      "contains_personal_data": false,
+      "rights_status": "cleared",
+      "notes": "FIKTIVES BEISPIEL – keine echte Freigabe, kein echter Inhalt."
+    }
+  ],
+  "reviews": [
+    {
+      "id": "rv-topaca-landing-expert-1",
+      "artifact_id": "art-topaca-landing",
+      "artifact_version": 1,
+      "dimension": "expert",
+      "status": "pass",
+      "reviewed_at": "2026-10-24T10:00:00+02:00",
+      "reviewer": "Fachreview Website (Mensch)",
+      "findings": [],
+      "evidence_refs": ["vorhaben/wrk-topaca-awareness-001/review-expert.md"]
+    },
+    {
+      "id": "rv-topaca-landing-legal-1",
+      "artifact_id": "art-topaca-landing",
+      "artifact_version": 1,
+      "dimension": "legal",
+      "status": "warning",
+      "reviewed_at": "2026-10-24T11:00:00+02:00",
+      "reviewer": "Rechtsprüfung intern",
+      "findings": [
+        {"severity": "minor", "message": "Zukunftsvision im Hero-Text deutlicher als geplant kennzeichnen", "fix": "Hinweis 'in Entwicklung' ergänzen"}
+      ],
+      "risk_accepted_by": "Geschäftsführung (fiktiv)",
+      "risk_accepted_at": "2026-10-24T12:00:00+02:00"
+    }
+  ],
+  "approvals": [
+    {
+      "id": "ap-topaca-landing-publish-1",
+      "artifact_id": "art-topaca-landing",
+      "artifact_version": 1,
+      "artifact_sha256": "5205057c4aaa41cf0243dfb50c27067921016fae1f7b4fbb09a02a48f90c977f",
+      "action": "publish",
+      "target": "website:production",
+      "decision": "approved",
+      "authorizer": "Geschäftsführung (fiktiv)",
+      "authorizer_role": "Geschäftsführung",
+      "decided_at": "2026-10-24T12:30:00+02:00",
+      "expires_at": "2026-11-07T23:59:00+01:00",
+      "review_refs": ["rv-topaca-landing-expert-1", "rv-topaca-landing-legal-1"],
+      "execution_status": "not_attempted",
+      "notes": "FIKTIV – es wurde nichts veröffentlicht."
+    }
+  ]
+}

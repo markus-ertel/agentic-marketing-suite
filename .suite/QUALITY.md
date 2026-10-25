@@ -18,9 +18,9 @@ Risikostufe **niedrig** (interner Textentwurf), **mittel** (öffentlicher Fachbe
 
 ## Ergebniszustände
 - `pass`: Prüfung dieser Dimension mit konkreten Nachweisen bestanden.
-- `warning`: nicht blockierendes Problem mit Begründung, dokumentiertem Risiko und akzeptierender befugter Instanz.
+- `warning`: nicht blockierendes Problem mit Begründung, dokumentiertem Risiko und akzeptierender befugter Instanz (`risk_accepted_by`; kein KI-System). Kritische Findings sind nie `warning`.
 - `blocked`: Verstoß, fehlende Berechtigung oder kritischer Mangel; **keine Außenwirkung**.
-- `not_applicable`: konkret begründet nicht relevant.
+- `not_applicable`: konkret begründet nicht relevant (Begründung in `notes`).
 - `not_checked`: nicht geprüft; **nicht** automatisch `pass`.
 
 ## Prüfprozess

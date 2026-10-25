@@ -91,5 +91,6 @@
     "notes": {
       "type": "string"
     }
-  }
+  },
+  "$comment": "Suite contract v0.2. lead_module must not repeat in supporting_modules."
 }
