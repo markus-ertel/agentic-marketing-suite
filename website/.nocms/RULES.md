@@ -284,3 +284,14 @@ Bevor ein Auftrag als abgeschlossen gemeldet wird, beantworte nachvollziehbar:
 9. **Offene Punkte:** Was ist noch ungeklärt, blockiert oder zur Freigabe vorzulegen?
 
 **Leitsatz:** Einfache Webstandards, klare Zuständigkeiten, nachweisbare Prüfungen und kontrollierte Veröffentlichung — ohne unnötigen CMS-Unterbau.
+
+
+## Gemeinsame Suite-Mindeststandards (ab Suite v0.2)
+
+Liegt dieses Modul innerhalb der Agentic Marketing Suite und ist `../.suite/` (vom Modulordner aus) lesbar, gelten die gemeinsamen Mindeststandards **auch bei direktem Start über dieses Modul**:
+
+- **Vor jeder Außenwirkung** (Veröffentlichen, Senden, Schalten/Budget, Druck, Löschen, Änderung in externen Systemen) `../.suite/GOVERNANCE.md` (Gates G2–G4), `../.suite/QUALITY.md` und `../.suite/LEGAL.md` bedarfsgerecht anwenden.
+- **Bei Übergaben, Prüf- und Freigabenachweisen** `../.suite/INTERFACES.md` (inkl. Status- und Freigabe-Mapping) und `../.suite/contracts/` verwenden; lokale Status- und Freigabefelder bleiben gültig, werden aber gemäß Mapping übersetzt.
+- **Strengere Regel gewinnt.** Widersprechen sich Modul- und Suite-Regel, gilt die strengere Sicherheits-, Rechte- oder Freigaberegel; Konflikt dokumentieren, im Zweifel HOLD.
+- Interne Arbeit ohne Außenwirkung (Beratung, Analyse, Entwurf) erfordert keinen vollständigen Suite-Durchlauf.
+- Fehlt `../.suite/` oder ist es nicht zugänglich, arbeitet dieses Modul unverändert eigenständig nach den eigenen Regeln. Die Suite ist keine Startvoraussetzung.
