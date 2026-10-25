@@ -1,7 +1,7 @@
 # Architektur v0.1 – föderierte Fachspezialisten und gemeinsame Mindeststandards
 
 ## Ziel
-Offene, dateibasierte Arbeitsumgebung **eines Unternehmens**. Keine implizite Agentur- oder Kundenmandantenhierarchie. Acht autonome Fachbereiche plus eine **optionale** Suite-Ebene für Aufträge, die mehrere Fachbereiche verbinden. Die zentrale Ebene ersetzt weder `AGENT.md` noch die lokalen Methoden oder lokalen Prüfungen.
+Offene, dateibasierte Arbeitsumgebung **eines Unternehmens**. Keine implizite Agentur- oder Kundenmandantenhierarchie. Neun autonome Fachbereiche plus eine **optionale** Suite-Ebene für Aufträge, die mehrere Fachbereiche verbinden. Die zentrale Ebene ersetzt weder `AGENT.md` noch die lokalen Methoden oder lokalen Prüfungen.
 
 ## Ebenen
 1. **Menschlicher Auftrag / Intent:** Freies Briefing, existierende Unterlagen oder Fortsetzung; kein starres Interview.

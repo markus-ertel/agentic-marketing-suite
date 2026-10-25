@@ -1,8 +1,8 @@
-"""Offline structure checks for the eight modules inside the suite; reads files only."""
+"""Offline structure checks for the nine modules inside the suite; reads files only."""
 import re,unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-MODULES={'marketing':'.marketing','pr':'.pr','social-media':'.social-media','website':'.nocms','advertising':'.advertising','creative':'.creative','noCRM':'.nocrm','analytics':'.analytics'}
+MODULES={'marketing':'.marketing','pr':'.pr','social-media':'.social-media','website':'.nocms','advertising':'.advertising','creative':'.creative','noCRM':'.nocrm','analytics':'.analytics','e-commerce':'.e-commerce'}
 RULES={'noCRM':'REGELN.md'}
 PLACEHOLDER=set('<>*…{')
 class TestModuleStructure(unittest.TestCase):
@@ -49,4 +49,26 @@ class TestModuleStructure(unittest.TestCase):
   self.assertIn('\nwebsite/ ',agent)
   self.assertNotIn('\nprojekt/\n',agent)
   self.assertFalse((w/'site').exists(),'site/ entsteht erst mit Umsetzungsauftrag')
+ def test_contract_module_enums(self):
+  # Schema-Enums, Modulregister und Prüfskript kennen dieselben Module
+  import json
+  c=ROOT/'.suite'/'contracts'
+  wo=json.loads((c/'work-order.schema.json').read_text(encoding='utf8'))['properties']
+  art=json.loads((c/'artifact.schema.json').read_text(encoding='utf8'))['properties']
+  for enum in (wo['lead_module']['enum'],wo['supporting_modules']['items']['enum'],art['owner_module']['enum']):
+   self.assertEqual(sorted(enum),sorted(MODULES))
+  register=(ROOT/'.suite'/'MODULES.md').read_text(encoding='utf8')
+  check=(ROOT/'.suite'/'tools'/'check_repository.py').read_text(encoding='utf8')
+  for m,s in MODULES.items():
+   self.assertIn(f'| {m}/ |',register)
+   self.assertIn(f"'{m}': '{s}'",check)
+ def test_ecommerce_skeleton(self):
+  e=ROOT/'e-commerce'
+  for d in ('input','archiv'):self.assertTrue((e/d/'.gitkeep').is_file(),d)
+  for name in ('RULES.md','BERATUNG.md','METHODEN.md','ARCHITECTURE.md','STRUKTUR.md','STATE.md','LOG.md','HISTORY.md','TESTFAELLE.md','QUELLEN.md','RECHT.md','AKTIONEN.md','FORMATE.md'):
+   self.assertTrue((e/'.e-commerce'/name).is_file(),name)
+  agent=(e/'AGENT.md').read_text(encoding='utf8')
+  self.assertIn('„Wobei kann ich Ihnen bei Ihrem Online-Shop helfen?“',agent)
+  # Beratungsmodul, keine Shop-Laufzeit und keine Ergebnisordner im Auslieferungszustand
+  for d in ('shop','checkout','feeds','katalog','funnels'):self.assertFalse((e/d).exists(),d)
 if __name__=='__main__':unittest.main()

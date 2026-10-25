@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "e-commerce/.e-commerce/formate/gmc-feed.schema.json",
+  "title": "EcommerceFeedRun",
+  "description": "Protokoll eines Merchant-Center-Feeds (shopping-listing): lokaler Preflight, Übertragung und Rückmeldung. Status-Mapping in .suite/INTERFACES.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "catalog_ref",
+    "feed_path",
+    "feed_sha256",
+    "format",
+    "generated_at",
+    "preflight",
+    "submission"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 4
+    },
+    "catalog_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "catalog_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "feed_path": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Relativ zum Suite-Root, z. B. e-commerce/feeds/gmc-AT.xml."
+    },
+    "feed_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "xml",
+        "tsv"
+      ]
+    },
+    "target_country": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}$"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "errors",
+        "warnings",
+        "tool"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "valid",
+            "warning",
+            "rejected"
+          ],
+          "description": "valid = 0 Fehler/0 Warnungen; warning = 0 Fehler, dokumentierte Warnungen; rejected = Fehler, kein Feed."
+        },
+        "errors": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool": {
+          "type": "string"
+        },
+        "warnings_accepted_by": {
+          "type": "string",
+          "description": "Mensch/Rolle, nie KI."
+        }
+      }
+    },
+    "submission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "not_submitted",
+            "approved",
+            "submitted",
+            "processed",
+            "failed",
+            "uncertain"
+          ]
+        },
+        "approval_ref": {
+          "type": "string",
+          "description": "ID des action-approval (Ziel ecommerce:feed_publish)."
+        },
+        "target": {
+          "type": "string"
+        },
+        "datasource_id": {
+          "type": "string"
+        },
+        "external_fetch_id": {
+          "type": "string"
+        },
+        "submitted_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "merchant_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checked_at"
+      ],
+      "properties": {
+        "checked_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "approved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limited": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "disapproved": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "diagnostics_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

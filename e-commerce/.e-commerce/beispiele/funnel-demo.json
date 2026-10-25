@@ -1,0 +1,51 @@
+{
+  "id": "demo-funnel-shirt",
+  "version": 1,
+  "status": "draft",
+  "shop_system": "beliebig (Spezifikation)",
+  "currency": "EUR",
+  "markets": ["AT", "DE"],
+  "steps": [
+    {"id": "produkt", "type": "product", "next": "kasse"},
+    {"id": "kasse", "type": "checkout", "next": "bump-beutel"},
+    {
+      "id": "bump-beutel",
+      "type": "order_bump",
+      "offer_ref": "angebot-beutel",
+      "preselected": false,
+      "requires_explicit_consent": true,
+      "payment_mode": "same_checkout",
+      "accept_label": "Stoffbeutel für 7,90 € hinzufügen",
+      "decline_label": "Ohne Stoffbeutel fortfahren",
+      "next": "upsell-zweites-shirt"
+    },
+    {
+      "id": "upsell-zweites-shirt",
+      "type": "upsell",
+      "offer_ref": "angebot-zweites-shirt",
+      "preselected": false,
+      "requires_explicit_consent": true,
+      "payment_mode": "new_payment_sca",
+      "button_label": "Zahlungspflichtig hinzufügen",
+      "decline_label": "Nein danke, zur Bestellbestätigung",
+      "next_on_accept": "danke",
+      "next_on_decline": "danke"
+    },
+    {"id": "danke", "type": "thank_you"}
+  ],
+  "offers": [
+    {"id": "angebot-beutel", "product_refs": ["DEMO-BEUTEL"], "price": "7.90 EUR", "compare_at_price": "9.90 EUR", "lowest_price_30d": "9.90 EUR"},
+    {"id": "angebot-zweites-shirt", "product_refs": ["DEMO-SHIRT-WE-M"], "price": "24.90 EUR", "refund_policy_ref": "rueckgabe-und-widerruf.md"}
+  ],
+  "experiment": {
+    "hypothesis": "Ein konkreter Nutzenhinweis im Order-Bump-Text erhöht den Deckungsbeitrag je Bestellung, ohne die Retourenquote zu erhöhen.",
+    "primary_metric": "Deckungsbeitrag je Bestellung",
+    "guardrail_metrics": ["Retourenquote", "Abbruchquote Checkout"],
+    "variants": ["A-kurz", "B-nutzen"],
+    "allocation": "50/50 zufällig je Sitzung",
+    "minimum_sample": 2000,
+    "stopping_rule": "Feste Laufzeit 4 Wochen, Auswertung erst danach",
+    "analytics_ref": "analytics/ (Testplan noch anzulegen)"
+  },
+  "notes": "Fiktives Beispiel. Kein aktiver Funnel, keine Freigabe."
+}

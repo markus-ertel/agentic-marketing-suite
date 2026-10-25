@@ -1,4 +1,4 @@
-# Modulregister v0.1
+# Modulregister v0.2
 
 | Modul | Zuständigkeit | Geeignete eingehende Aufgaben | Möglicher Ausgabevertrag |
 |---|---|---|---|
@@ -10,5 +10,8 @@
 | creative/ | Design, Corporate Design, Medienproduktion | Key Visual, Print, Bild, Video, Audio | Quellen, Medien, Export und QA |
 | noCRM/ | Individuelle 1:1-Kommunikation | Rückfrage, Begleitung, Antwortentwurf | Nachricht, rechtmäßiger Versandnachweis |
 | analytics/ | Evidenz, Messung, unabhängige Wirkungsevaluation | Ergebnisse, Qualitätslücken, KPIs | Analyse, Hypothesen, Verbesserungsauftrag |
+| e-commerce/ | Online-Shop-Beratung, Produktdaten, Feeds, Checkout und Angebote; kein Shop-Betrieb | Shop-System, Katalog, Merchant-Center-Feed, Checkout, Order Bump, Upsell, Preisaktion | Katalog (CSV/JSON), Feed (XML/TSV), Funnel-Spezifikation, Preis-/Feed-Freigabe |
+
+**Zuständigkeit Produktfeed:** Schreib-Owner von Katalog und Feed ist `e-commerce/`; `advertising/` nutzt den Feed für Shopping-Kampagnen und meldet Befunde zurück.
 
 **Regel:** Nur benötigte Module aktivieren. Benachbarte Verzeichnisse sind optionale Quellen, keine Ausführungsermächtigung. Direkter Fachauftrag bleibt beim Fachspezialisten, ein fachübergreifender Auftrag verwendet `.suite/WORKFLOW.md`.

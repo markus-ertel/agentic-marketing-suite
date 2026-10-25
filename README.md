@@ -26,7 +26,7 @@
 3. [Für wen ist die Suite gedacht?](#3-für-wen-ist-die-suite-gedacht)
 4. [Schnellstart](#4-schnellstart)
 5. [Architektur und Verzeichnisstruktur](#5-architektur-und-verzeichnisstruktur)
-6. [Die acht Fachspezialisten](#6-die-acht-fachspezialisten)
+6. [Die neun Fachspezialisten](#6-die-neun-fachspezialisten)
 7. [Arbeitsprinzipien der KI](#7-arbeitsprinzipien-der-ki)
 8. [Fachmethoden und Methodenwahl](#8-fachmethoden-und-methodenwahl)
 9. [Der bereichsübergreifende Gesamtablauf](#9-der-bereichsübergreifende-gesamtablauf)
@@ -55,7 +55,7 @@ Die **Agentic Marketing Suite** organisiert Werbung, Marketing und Marktkommunik
 
 Die Suite verbindet drei Ebenen:
 
-1. **Fachkompetenz:** Acht eigenständige Module für Marketing, Öffentlichkeitsarbeit, Social Media, Website/noCMS, Advertising, Creative, noCRM und Analytics.
+1. **Fachkompetenz:** Neun eigenständige Module für Marketing, Öffentlichkeitsarbeit, Social Media, Website/noCMS, Advertising, Creative, noCRM, Analytics und E-Commerce.
 2. **Gemeinsame Prinzipien:** Qualität, rechtliche Mindeststandards, Sicherheitsgrenzen, Ergebnisübergaben, Freigaben, Zustandsverwaltung und Nachvollziehbarkeit.
 3. **Ausführungsumgebung:** Ein KI-Harness, KI-Modell oder Cognitive Computer, der Dateien lesen, Methoden anwenden und optional über explizit erlaubte Capabilities mit externen Systemen arbeiten kann.
 
@@ -109,7 +109,7 @@ Sie setzt **keine Kundenordner** voraus. Wer später mehrere Mandanten betreuen 
 
 ### 3.1 Zwei typische Betriebsweisen
 
-**Eigenes Unternehmen:** Die Organisation nutzt die Suite für die eigene Marke und eigene Aktivitäten. Alle acht Bereiche können auf berechtigt zugängliche Unternehmensinformationen zurückgreifen.
+**Eigenes Unternehmen:** Die Organisation nutzt die Suite für die eigene Marke und eigene Aktivitäten. Alle neun Bereiche können auf berechtigt zugängliche Unternehmensinformationen zurückgreifen.
 
 **Beratungs- oder Agenturbetrieb:** Die Organisation betreut mehrere Marken. Hier sind zusätzliche Trennung von Kundendaten, Konten, Zustimmungen, Rollen und Berechtigungen nötig. Die Fachmodule selbst benötigen dafür keine neue Methodenarchitektur.
 
@@ -240,6 +240,9 @@ agentic-marketing-suite/
 ├── analytics/                 # Daten, Wirkung, Lernen
 │   ├── AGENT.md
 │   └── .analytics/
+├── e-commerce/                # Shop-Beratung, Produktdaten, Feeds, Funnels
+│   ├── AGENT.md
+│   └── .e-commerce/
 │
 └── vorhaben/                  # Optional; erst bei gemeinsamen Aufträgen
     └── <vorgangs-id>/
@@ -289,7 +292,7 @@ Ein Spezialist darf auf berechtigt zugängliche Strategie-, Marken- und Ergebnis
 
 ---
 
-## 6. Die acht Fachspezialisten
+## 6. Die neun Fachspezialisten
 
 | Modul | Fachlicher Auftrag | Methoden im untersuchten Paket | Interner Methodenindex |
 |---|---|---:|---|
@@ -301,7 +304,8 @@ Ein Spezialist darf auf berechtigt zugängliche Strategie-, Marken- und Ergebnis
 | **Creative** | Gestaltung, Art Direction, Corporate Design, Bild, Video, Audio und Print | 71 | [`creative/.creative/METHODEN.md`](creative/.creative/METHODEN.md) |
 | **noCRM** | Individuelle 1:1-Kommunikation, Beziehungskontext, Antworten, Service, Nachbetreuung | 59 | [`noCRM/.nocrm/METHODEN.md`](noCRM/.nocrm/METHODEN.md) |
 | **Analytics** | Datenqualität, Wirkungsbeurteilung, Experimente, Interpretation und Verbesserung | 73 | [`analytics/.analytics/METHODEN.md`](analytics/.analytics/METHODEN.md) |
-| **Gesamt** | | **469** | |
+| **E-Commerce** | Shop-System-Wahl, Produktdaten und Feeds, Checkout, Order Bumps, Upsells, Preisaktionen, Funnel-Tests | 8 | [`e-commerce/.e-commerce/METHODEN.md`](e-commerce/.e-commerce/METHODEN.md) |
+| **Gesamt** | | **477** | |
 
 Die Zahlen beschreiben den **Dateibestand**, nicht die Zahl bereits empirisch nachgewiesener, autonom beherrschter Fähigkeiten.
 
@@ -390,11 +394,23 @@ Analytics prüft Datenqualität, Messdefinitionen, Trends, Experimente, Kausalit
 
 Analytics ist beratend und grundsätzlich **read-only**. Es darf nicht eigenständig Anzeigenbudgets, Websites, CRM-Kontakte oder Publikationen ändern. Siehe [`METRIKEN.md`](analytics/.analytics/METRIKEN.md).
 
+### 6.9 E-Commerce – Shop-Beratung, Produktdaten und Funnel-Governance
+
+**Einstieg:** [`e-commerce/AGENT.md`](e-commerce/AGENT.md)
+
+E-Commerce berät zu Shop-System-Wahl (Shopify, WooCommerce, Shopware, Eigenbau), Produktdaten und Varianten, Google-Merchant-Center-Feeds, Checkout, Order Bumps, Post-Purchase-Upsells, Preis- und Aktionsgestaltung sowie Funnel-Tests mit `analytics/`. Das Modul ist **führende Quelle** für Katalog, Preislogik, Feed und Funnel-Spezifikation in offenen Formaten (CSV/JSON).
+
+**Kein Shop-Betrieb:** Warenkorb, Checkout, Zahlungsabwicklung, Bestände und Webhooks laufen im externen Shop-System in eigener Verantwortung. Jede Preis-, Bestands-, Zahlungs-, Erstattungs-, Funnel- oder Feed-Änderung dort ist eine externe Aktion mit `action-approval` (Ziele wie `ecommerce:price_update`, `ecommerce:inventory_sync`, `ecommerce:feed_publish`; siehe [`AKTIONEN.md`](e-commerce/.e-commerce/AKTIONEN.md)).
+
+**Typische Aufträge:** „Welches Shop-System passt zu uns?“, „Bereite unseren Merchant-Center-Feed auf“, „Plane einen Order Bump ohne Dark Patterns“, „Ist unser 1-Klick-Upsell PSD2-konform spezifiziert?“, „Prüfe die Streichpreise unserer Herbstaktion.“
+
+**Rechtsrahmen (AT/EU):** Bestellbutton (§ 8 FAGG, § 312j BGB), Preisangaben und Streichpreise nach der 30-Tage-Regel (§ 9a PrAG, § 11 PAngV), Zusatzleistungen ohne Voreinstellung (§ 6c KSchG), Dark Patterns (UGP-RL, DSA für Plattformen), SCA und Merchant-Initiated Transactions (PSD2/RTS), PCI DSS SAQ A. Siehe [`RECHT.md`](e-commerce/.e-commerce/RECHT.md). Lokale Werkzeuge: [`generate_gmc_feed.py`](e-commerce/.e-commerce/tools/generate_gmc_feed.py) (Feed-Preflight und XML/TSV) und [`validate_compliance.py`](e-commerce/.e-commerce/tools/validate_compliance.py) (Funnel- und Streichpreisprüfung).
+
 ---
 
 ## 7. Arbeitsprinzipien der KI
 
-Die acht `AGENT.md`-Dateien verfolgen dieselben Grundsätze:
+Die neun `AGENT.md`-Dateien verfolgen dieselben Grundsätze:
 
 1. **Natürlich starten:** Bei bloßer Initialisierung eine kurze offene Frage („Wobei kann ich helfen?“ in fachlicher Form). Keine Funktionsliste und kein Prozessmenü.
 2. **Konkrete Anliegen sofort bearbeiten:** Kein vorgeschaltetes Formular, wenn bereits genug Informationen vorliegen.
@@ -836,6 +852,7 @@ Nicht jede Installation benötigt jede Schicht. Eine Strategieberatung funktioni
 | Analytics | CSV/SQL, Analytics-APIs, Dashboards, Python | Einzelne lokale Auswertungswerkzeuge; keine Live-Datenverbindung |
 | PR | Medienrecherche, Pressetools, Versand, Monitoring | Methoden/Arbeitsaufträge; Versand benötigt externe Integration |
 | Marketing | Recherche, Fachanalysen, Konzept- und Planungswerkzeuge | Methodenbibliothek und offene Ergebnisdateien |
+| E-Commerce | Shop-System-APIs (Shopify, WooCommerce, Shopware), Merchant API, Zahlungsdienst-Konfiguration | Offene Katalog-/Funnel-Formate, lokaler Feed- und Compliance-Preflight; keine Shop-Laufzeit, kein produktiver Adapter |
 
 ### 17.3 Grenzen der Automatisierung
 
@@ -1026,6 +1043,8 @@ STRUCTURAL_PREFLIGHT_OK (no compliance certification)
 | [`noCRM/.nocrm/tools/preflight.py`](noCRM/.nocrm/tools/preflight.py) | Kommunikationsaktion vorprüfen, **nicht** versenden |
 | [`noCRM/.nocrm/tools/contact_store.py`](noCRM/.nocrm/tools/contact_store.py) | Lokalen offenen Kontaktbestand bearbeiten |
 | [`analytics/.analytics/tools/evaluate_csv.py`](analytics/.analytics/tools/evaluate_csv.py) | CSV-Daten deskriptiv auswerten |
+| [`e-commerce/.e-commerce/tools/generate_gmc_feed.py`](e-commerce/.e-commerce/tools/generate_gmc_feed.py) | Produktkatalog prüfen und Merchant-Center-Feed (XML/TSV) lokal erzeugen, **kein** Upload |
+| [`e-commerce/.e-commerce/tools/validate_compliance.py`](e-commerce/.e-commerce/tools/validate_compliance.py) | Funnel-Schutzschalter und Streichpreise vorprüfen, **keine** Rechtsprüfung |
 
 Die genaue CLI-Syntax und Beispiele stehen bei den jeweiligen Werkzeugen, Tests und Modul-Dokumenten. **Lokale Prüfwerkzeuge dürfen nicht als fertige operative Integrationen missverstanden werden.**
 
@@ -1120,7 +1139,15 @@ Plattformen zählen Verzeichnisse, Metadatendateien und macOS-Begleitdateien unt
 
 Ein neues Modul sollte mindestens einen fachlichen Einstieg (`AGENT.md`), interne Regeln, einen Methodenindex, eine klare Zuständigkeit, Zustand/Log/Historie und Regeln für Arbeitsergebnisse besitzen. Es muss selbstständig arbeiten und darf keine Pflichtabhängigkeit von einer Agentur- oder Kundenhierarchie mitbringen.
 
-Beispielsweise könnte später ein eigenständiger Bereich für Events, E-Commerce oder Marktforschung hinzukommen. Falls ein neues Modul am gemeinsamen maschinenlesbaren Work-Order-Vertrag teilnehmen soll, muss es in den **Schema-Enums und im Modulregister** explizit ergänzt und erneut getestet werden. Der vorhandene Vertrag kennt derzeit **genau acht Modulbezeichnungen**.
+Beispielsweise könnte später ein eigenständiger Bereich für Events oder Marktforschung hinzukommen; `e-commerce/` ist auf diesem Weg als neuntes Modul entstanden. Falls ein neues Modul am gemeinsamen maschinenlesbaren Vertrag teilnehmen soll, sind folgende Stellen zu ergänzen und erneut zu testen:
+
+1. Modul-Enums in `.suite/contracts/work-order.schema.json` (`lead_module`, `supporting_modules`) und `.suite/contracts/artifact.schema.json` (`owner_module`); `review` und `action-approval` referenzieren Artefakte und kennen keine Modulliste.
+2. Modulregister `.suite/MODULES.md`.
+3. `MODULES` in `.suite/tools/check_repository.py` und `.suite/tests/test_module_structure.py` sowie ggf. Testverzeichnis und Demo-Preflights.
+4. Status- und Freigabe-Mapping in `.suite/INTERFACES.md`.
+5. Abschnitt „Gemeinsame Suite-Mindeststandards“ in der Modul-`RULES.md`.
+
+Der Strukturtest prüft, dass Schema-Enums, Modulregister und Prüfskript dieselben Module kennen. Der vorhandene Vertrag kennt derzeit **genau neun Modulbezeichnungen**.
 
 ### 23.3 Gemeinsame Regeln ändern
 
@@ -1206,7 +1233,7 @@ Die derzeitige Suite ist ein **umfangreicher fachlicher und organisatorischer Pr
 
 ### 25.3 Wichtige Feststellungen zum Entwicklungsstand
 
-- Die acht Fachmodule liegen in der untersuchten integrierten ZIP-Version vor.
+- Die neun Fachmodule liegen im Repository vor; `e-commerce/` ist seit Suite v0.2 ergänzt.
 - Die gemeinsame Governance-Schicht ist als **additive Erweiterung** integriert (v0.2).
 - Die Fach-`AGENT.md`-Dateien sind **nicht** umgeschrieben worden. Seit v0.2 verweist jedoch jede Modul-`RULES.md` (noCRM: `REGELN.md`) auf die Suite-Mindeststandards, sodass sie bei Außenwirkung auch bei direktem Modulstart gelten; ohne `.suite/` arbeiten die Module unverändert eigenständig.
 - Die Suite enthält **offene Verträge und einzelne lokale Prüfwerkzeuge**, aber keine automatisch betriebsbereiten Live-Integrationen.

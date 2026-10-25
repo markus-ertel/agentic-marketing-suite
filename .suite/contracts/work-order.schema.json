@@ -30,7 +30,8 @@
         "advertising",
         "creative",
         "noCRM",
-        "analytics"
+        "analytics",
+        "e-commerce"
       ]
     },
     "supporting_modules": {
@@ -45,7 +46,8 @@
           "advertising",
           "creative",
           "noCRM",
-          "analytics"
+          "analytics",
+          "e-commerce"
         ]
       },
       "uniqueItems": true

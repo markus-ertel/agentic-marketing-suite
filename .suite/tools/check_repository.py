@@ -13,7 +13,7 @@ SKIP_DIRS = {'.git', '.venv', 'venv', '__pycache__', 'node_modules'}
 MODULES = {
     'marketing': '.marketing', 'pr': '.pr', 'social-media': '.social-media',
     'website': '.nocms', 'advertising': '.advertising', 'creative': '.creative',
-    'noCRM': '.nocrm', 'analytics': '.analytics',
+    'noCRM': '.nocrm', 'analytics': '.analytics', 'e-commerce': '.e-commerce',
 }
 
 
@@ -64,6 +64,7 @@ def main():
         for directory in (
             '.suite/tests', 'analytics/.analytics/tests',
             'creative/.creative/tests', 'noCRM/.nocrm/tests',
+            'e-commerce/.e-commerce/tests',
         )
     ]
     commands.extend([
@@ -72,6 +73,9 @@ def main():
         ['.suite/tools/validate_records.py', 'bundle', '.suite/beispiele/demo-freigabe-bundle.json'],
         ['social-media/.social-media/tools/validate_job.py', 'social-media/.social-media/integrationen/BEISPIEL_JOB.json'],
         ['advertising/.advertising/tools/validate_manifest.py', 'advertising/.advertising/beispiele/DRAFT_MANIFEST_DEMO.json'],
+        ['e-commerce/.e-commerce/tools/generate_gmc_feed.py', '-i', 'e-commerce/.e-commerce/beispiele/katalog-demo.csv', '--check-only', '--strict'],
+        ['e-commerce/.e-commerce/tools/validate_compliance.py', '--offers', 'e-commerce/.e-commerce/beispiele/funnel-demo.json',
+         '--catalog', 'e-commerce/.e-commerce/beispiele/katalog-demo.json'],
     ])
     failed = False
     for command in commands:

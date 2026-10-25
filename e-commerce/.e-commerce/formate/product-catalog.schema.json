@@ -1,0 +1,236 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "e-commerce/.e-commerce/formate/product-catalog.schema.json",
+  "title": "EcommerceProductCatalog",
+  "description": "Produktkatalog (catalog-product) des Moduls e-commerce v0.1: eine Zeile je kaufbarer Variante. CSV nutzt dieselben Spaltennamen; Listen mit \"|\" getrennt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "catalog_id",
+    "version",
+    "currency",
+    "products"
+  ],
+  "properties": {
+    "catalog_id": {
+      "type": "string",
+      "minLength": 4
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "country": {
+      "type": "string",
+      "pattern": "^[A-Z]{2}$"
+    },
+    "language": {
+      "type": "string",
+      "pattern": "^[a-z]{2}$"
+    },
+    "source_ref": {
+      "type": "string"
+    },
+    "products": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sku",
+          "title",
+          "description",
+          "link",
+          "image_link",
+          "availability",
+          "price"
+        ],
+        "properties": {
+          "sku": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Stabile, eindeutige Artikelnummer je kaufbarer Variante; wird als g:id exportiert."
+          },
+          "item_group_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Verbindet Varianten eines Produkts."
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "link": {
+            "type": "string",
+            "pattern": "^https?://.+"
+          },
+          "image_link": {
+            "type": "string",
+            "pattern": "^https?://.+"
+          },
+          "additional_image_link": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^https?://.+"
+            }
+          },
+          "availability": {
+            "type": "string",
+            "enum": [
+              "in_stock",
+              "out_of_stock",
+              "preorder",
+              "backorder"
+            ]
+          },
+          "availability_date": {
+            "type": "string",
+            "description": "ISO 8601; Pflicht bei preorder/backorder."
+          },
+          "stock_quantity": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Intern, nicht exportiert; Momentaufnahme."
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Betrag mit Punkt, optional mit ISO-4217-Währung, z. B. \"29.90\" oder \"29.90 EUR\"."
+          },
+          "sale_price": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Betrag mit Punkt, optional mit ISO-4217-Währung, z. B. \"29.90\" oder \"29.90 EUR\"."
+          },
+          "sale_price_effective_date": {
+            "type": "string",
+            "description": "\"Start/Ende\" in ISO 8601 mit Zeitzone."
+          },
+          "lowest_price_30d": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Intern, nicht exportiert: niedrigster Preis der letzten 30 Tage vor der Ermäßigung; Pflicht bei sale_price (Omnibus)."
+          },
+          "omnibus_exception": {
+            "type": "string",
+            "description": "Intern: rechtlich geprüfte Begründung einer Ausnahme von der 30-Tage-Regel."
+          },
+          "brand": {
+            "type": "string"
+          },
+          "gtin": {
+            "type": "string",
+            "pattern": "^([0-9]{8}|[0-9]{12,14})$"
+          },
+          "mpn": {
+            "type": "string"
+          },
+          "identifier_exists": {
+            "type": "string",
+            "enum": [
+              "yes",
+              "no"
+            ]
+          },
+          "condition": {
+            "type": "string",
+            "enum": [
+              "new",
+              "refurbished",
+              "used"
+            ]
+          },
+          "google_product_category": {
+            "type": "string"
+          },
+          "product_type": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string"
+          },
+          "material": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string",
+            "enum": [
+              "male",
+              "female",
+              "unisex"
+            ]
+          },
+          "age_group": {
+            "type": "string",
+            "enum": [
+              "newborn",
+              "infant",
+              "toddler",
+              "kids",
+              "adult"
+            ]
+          },
+          "unit_pricing_measure": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)? ?[a-zA-Z]+$"
+          },
+          "unit_pricing_base_measure": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)? ?[a-zA-Z]+$"
+          },
+          "shipping_weight": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)? ?[a-zA-Z]+$"
+          },
+          "custom_label_0": {
+            "type": "string",
+            "description": "Kampagnensteuerung, keine personenbezogenen Daten."
+          },
+          "custom_label_1": {
+            "type": "string",
+            "description": "Kampagnensteuerung, keine personenbezogenen Daten."
+          },
+          "custom_label_2": {
+            "type": "string",
+            "description": "Kampagnensteuerung, keine personenbezogenen Daten."
+          },
+          "custom_label_3": {
+            "type": "string",
+            "description": "Kampagnensteuerung, keine personenbezogenen Daten."
+          },
+          "custom_label_4": {
+            "type": "string",
+            "description": "Kampagnensteuerung, keine personenbezogenen Daten."
+          },
+          "source_ref": {
+            "type": "string",
+            "description": "Intern: Herkunft der Daten (ERP, Lieferantenliste)."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Intern, nicht exportiert."
+          }
+        }
+      }
+    }
+  }
+}

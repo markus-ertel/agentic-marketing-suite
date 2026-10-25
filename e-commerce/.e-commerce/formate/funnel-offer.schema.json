@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "e-commerce/.e-commerce/formate/funnel-offer.schema.json",
+  "title": "EcommerceFunnelOffer",
+  "description": "Funnel- und Angebotsdefinition (funnel-offer) des Moduls e-commerce v0.1. Spezifikation für ein externes Shop-System, keine ausführbare Konfiguration. Semantische Regeln prüft tools/validate_compliance.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "status",
+    "currency",
+    "steps",
+    "offers"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 4
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "live",
+        "paused",
+        "archived"
+      ]
+    },
+    "shop_system": {
+      "type": "string"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$"
+    },
+    "markets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{2}$"
+      }
+    },
+    "approval_ref": {
+      "type": "string"
+    },
+    "legal_review_ref": {
+      "type": "string"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "type"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "landing",
+              "product",
+              "checkout",
+              "order_bump",
+              "upsell",
+              "downsell",
+              "thank_you"
+            ]
+          },
+          "offer_ref": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string"
+          },
+          "next_on_accept": {
+            "type": "string"
+          },
+          "next_on_decline": {
+            "type": "string"
+          },
+          "preselected": {
+            "type": "boolean",
+            "const": false,
+            "description": "Zusatzangebote nie vorausgewählt."
+          },
+          "requires_explicit_consent": {
+            "type": "boolean",
+            "const": true
+          },
+          "accept_label": {
+            "type": "string"
+          },
+          "decline_label": {
+            "type": "string"
+          },
+          "button_label": {
+            "type": "string",
+            "description": "Bei Folgekauf eindeutige Zahlungspflicht, z. B. \"Zahlungspflichtig hinzufügen\"."
+          },
+          "confirmshaming": {
+            "type": "boolean",
+            "const": false
+          },
+          "payment_mode": {
+            "type": "string",
+            "enum": [
+              "none",
+              "same_checkout",
+              "new_payment_sca",
+              "stored_credential_cit",
+              "mit_agreed"
+            ]
+          },
+          "payment_agreement_ref": {
+            "type": "string",
+            "description": "Verweis auf dokumentierte Vereinbarung/Mandat zur Nutzung gespeicherter Zahlungsdaten."
+          },
+          "psp_confirmation_ref": {
+            "type": "string",
+            "description": "Bestätigung des Zahlungsdienstes zur CIT/MIT- und SCA-Einstufung."
+          },
+          "auto_accept_after_seconds": {
+            "type": "integer",
+            "maximum": 0,
+            "minimum": 0
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "offers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "product_refs",
+          "price"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "product_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "title": {
+            "type": "string"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Betrag mit Punkt, optional mit ISO-4217-Währung, z. B. \"29.90\" oder \"29.90 EUR\"."
+          },
+          "compare_at_price": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Streichpreis; muss dem niedrigsten 30-Tage-Preis entsprechen."
+          },
+          "lowest_price_30d": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]{1,2})?( [A-Z]{3})?$",
+            "description": "Betrag mit Punkt, optional mit ISO-4217-Währung, z. B. \"29.90\" oder \"29.90 EUR\"."
+          },
+          "omnibus_exception": {
+            "type": "string"
+          },
+          "urgency": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "truthful_basis_ref"
+            ],
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "countdown",
+                  "stock",
+                  "deadline"
+                ]
+              },
+              "ends_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "truthful_basis_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "resets_on_reload": {
+                "type": "boolean",
+                "const": false
+              }
+            }
+          },
+          "refund_policy_ref": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "experiment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hypothesis",
+        "primary_metric",
+        "variants",
+        "stopping_rule"
+      ],
+      "properties": {
+        "hypothesis": {
+          "type": "string",
+          "minLength": 8
+        },
+        "primary_metric": {
+          "type": "string",
+          "minLength": 2
+        },
+        "guardrail_metrics": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "allocation": {
+          "type": "string"
+        },
+        "minimum_sample": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "stopping_rule": {
+          "type": "string",
+          "minLength": 4
+        },
+        "varies_price": {
+          "type": "boolean"
+        },
+        "legal_review_ref": {
+          "type": "string"
+        },
+        "analytics_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

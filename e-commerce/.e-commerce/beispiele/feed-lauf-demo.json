@@ -1,0 +1,13 @@
+{
+  "id": "demo-feedlauf-1",
+  "catalog_ref": "e-commerce/.e-commerce/beispiele/katalog-demo.csv",
+  "feed_path": "e-commerce/feeds/gmc-AT-demo.xml",
+  "feed_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "format": "xml",
+  "target_country": "AT",
+  "language": "de",
+  "generated_at": "2026-10-25T12:00:00+02:00",
+  "preflight": {"status": "valid", "errors": 0, "warnings": 0, "tool": "generate_gmc_feed.py v0.1"},
+  "submission": {"status": "not_submitted"},
+  "notes": "Fiktives Protokoll mit Platzhalter-Hash; nicht übertragen."
+}

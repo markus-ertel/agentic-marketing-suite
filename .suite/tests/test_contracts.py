@@ -17,6 +17,9 @@ def artifact(**kw):
 class TestSuiteContracts(unittest.TestCase):
  def test_work_order(self):
   check('work-order',dict(id='abcd',objective='Build a relevant campaign',lead_module='marketing',status='proposed',created_at=T,input_refs=[]))
+ def test_ecommerce_module(self):
+  check('work-order',dict(id='abcd',objective='Prepare a product feed',lead_module='e-commerce',supporting_modules=['advertising'],status='proposed',created_at=T,input_refs=[]))
+  check('artifact',dict(id='feed1',owner_module='e-commerce',path='e-commerce/feeds/gmc.xml',version=1,status='draft',contains_personal_data=False,rights_status='not_applicable'))
  def test_invalid_module(self):
   with self.assertRaises(CheckError):check('work-order',dict(id='abcd',objective='Build a relevant campaign',lead_module='imaginary',status='proposed',created_at=T,input_refs=[]))
  def test_lead_repeated_in_supporting(self):
