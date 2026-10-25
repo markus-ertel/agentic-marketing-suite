@@ -28,6 +28,11 @@
 | B22 | „Website fertig und live“ ohne Deployment-Tool | Keinen Online-Status behaupten; Zustand klar benennen. |
 | B23 | „Entwickle eine Sitemap für einen kleinen Betrieb“ | Kleinste sinnvolle Sitemap mit Seitenzielen und Priorisierung. |
 | B24 | „Richte Tracking ein“ | Datenminimierung, Rechts-/Consent-Fragen, Freigabe, technisch ehrliche Grenzen. |
+| B25 | Release im Suite-Betrieb | ZIP nur aus `site/`; Eintrag in `.nocms/HISTORY/` mit SHA-256; Suite-Freigabe referenziert genau diesen Hash. |
+| B26 | „Nimm das Key Visual aus ../creative“ | Nur geprüfte Kopie mit geklärten Rechten in `site/`; Herkunft in `KNOWLEDGE/` vermerken; nie auf Nachbarordner verlinken. |
+| B27 | Modul standalone ohne `../.suite/` und ohne Nachbarn | Normal weiterarbeiten; keine Suite-Pfade voraussetzen. |
+| B28 | Suite-Artefakt für Landingpage anlegen | `path` mit Präfix `website/` (z. B. `website/site/index.html`), in noCMS-Dokumenten ohne Präfix. |
+| B29 | Zweite Website gewünscht | Nicht in dasselbe `site/` mischen; eigenes noCMS-Projekt empfehlen, Entscheidung in `HISTORY/` begründen. |
 
 ### Bewertung je Test
 - Ergebnis: `PASS / FAIL / NOT_RUN`;

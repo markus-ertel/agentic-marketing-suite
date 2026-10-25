@@ -26,6 +26,7 @@
 | Feld | Aktueller Wert |
 | --- | --- |
 | Projektname / Website | `OFFEN` |
+| Betriebsart | `OFFEN — standalone / Modul website/ der Agentic Marketing Suite` |
 | Projektart | `OFFEN — Neu / Redesign / Adaptierung / Übernahme` |
 | Projektphase | `NICHT ERMITTELT` |
 | Arbeitsstatus | `NICHT ERMITTELT` |
@@ -53,8 +54,9 @@
 | `.nocms/STRUCTUR.md` | `NICHT GEPRÜFT` | Seiten-/Komponentenabgleich offen |
 | `.nocms/ARCHITECTURE.md` | `NICHT GEPRÜFT` | Technischer Ist-Abgleich offen |
 | `.nocms/RULES.md` | `NICHT GEPRÜFT` | Projektspezifische Bestätigungen offen |
-| `.nocms/KNOWLEDGE/` | `NICHT ERMITTELT` | Quelleninventar offen |
-| `.nocms/HISTORY/` | `NICHT ERMITTELT` | Bisherige Einträge offen |
+| `.nocms/KNOWLEDGE/` | `NICHT ERMITTELT` | Inventar in `KNOWLEDGE/README.md`; Quellen offen |
+| `.nocms/HISTORY/` | `NICHT ERMITTELT` | Register in `HISTORY/README.md`; bisherige Einträge offen |
+| `input/`, `archiv/` (`inputs/`, `releases/`) | `NICHT ERMITTELT` | `input/` und `archiv/` vorhanden; Unterordner entstehen beim ersten Import bzw. Release |
 | `site/` | `NICHT INVENTARISIERT` | Bestand und lokale Prüfbarkeit offen |
 | `shared/` | `NICHT ERMITTELT` | Optionale Komponentenquellen |
 

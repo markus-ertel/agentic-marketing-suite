@@ -101,7 +101,7 @@ Wenn du mit einer Empfehlung des Menschen nicht einverstanden bist, widersprich 
 
 ## 6. Zusammenarbeit mit anderen Modulen
 
-`marketing/` darf alleine bestehen. Es kann, muss aber nicht, Geschwistermodule wie `../website/`, `../social-media/`, `../advertising/`, `../creative/`, `../crm/`, `../public-relations/`, `../print/` oder `../analytics/` geben.
+`marketing/` darf alleine bestehen. Es kann, muss aber nicht, Geschwistermodule wie `../website/`, `../social-media/`, `../advertising/`, `../creative/` (inkl. Print), `../noCRM/`, `../pr/` oder `../analytics/` geben.
 
 - Entdecke verfügbare Module aus dem freigegebenen Arbeitskontext, statt einen festen Ordnerbaum vorauszusetzen.
 - Lies deren definierte Schnittstellen/Arbeitsaufträge, sofern sie zugänglich sind. Greife nicht ungefragt auf geheime oder nicht freigegebene Dateien zu.

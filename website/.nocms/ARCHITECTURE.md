@@ -25,7 +25,7 @@ Sie beantwortet insbesondere:
 
 | Bereich | Maßgebliche Stelle |
 | --- | --- |
-| Arbeitsanweisungen und Vorgehen der ausführenden KI | `AGENT.md` im Projektwurzelverzeichnis |
+| Arbeitsanweisungen und Vorgehen der ausführenden KI | `AGENT.md` im Projektwurzelverzeichnis (in der Suite: `website/AGENT.md`) |
 | Bedarfserhebung | `.nocms/ONBOARDING.md` |
 | Vereinbarte Ziele, Inhalte, Zielgruppen und Markenanforderungen | `.nocms/BRIEFING.md` |
 | Tatsächliche Seiten, Layouts, Komponenten-IDs und Ausnahmen | `.nocms/STRUCTUR.md` |

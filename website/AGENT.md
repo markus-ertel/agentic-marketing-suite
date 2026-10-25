@@ -35,7 +35,7 @@ Diese Datei ist der verbindliche Einstiegspunkt für Coding-Agents, KI-Harnesses
 ## 2. Projektverzeichnisse und Zuständigkeiten
 
 ```text
-projekt/
+website/                       # Projektwurzel = Ordner dieser AGENT.md (standalone frei benennbar)
 ├── AGENT.md                   # Diese Arbeitsanleitung (verbindlicher Einstieg)
 ├── site/                      # Einziger Veröffentlichungsbereich
 │   ├── index.html
@@ -66,7 +66,16 @@ projekt/
 
 Die abgebildete Website-Struktur ist beispielhaft. **Dateinamen und Aufgaben aus `.nocms/` sind zu respektieren**, insbesondere die Schreibweise `STRUCTUR.md`. Erzeuge fehlende Verzeichnisse und Dokumente bei der Einrichtung, ohne vorhandene Projektinformationen zu überschreiben. `shared/` und `tests/` dürfen leer sein oder fehlen, wenn sie nicht benötigt werden.
 
-**Veröffentlichungsgrenze:** Es dürfen ausschließlich die für die Veröffentlichung freigegebenen Inhalte von `site/` auf den Webserver gelangen. Veröffentliche niemals `AGENT.md`, `.nocms/`, `input/`, `shared/`, `archiv/`, `tests/`, Zugangsdaten oder interne Quelldokumente. Prüfe auch, ob Symlinks oder andere indirekte Verweise private Dateien aus `site/` zugänglich machen.
+### Projektwurzel und Betrieb in der Agentic Marketing Suite
+
+- **Projektwurzel** ist der Ordner, der diese `AGENT.md` enthält. Alle Pfade in noCMS-Dokumenten (`site/`, `shared/`, `.nocms/`, `input/`, `archiv/`, `tests/`) sind relativ dazu und werden **ohne** Präfix geschrieben.
+- **Standalone:** Der Ordner darf beliebig heißen; es gibt keine Nachbarmodule und keine `../.suite/`.
+- **In der Suite:** Die Projektwurzel ist das Modul `website/` im Suite-Root. Nachbarmodule liegen unter `../marketing/`, `../advertising/` usw., die gemeinsame Ebene unter `../.suite/` (siehe Abschnitt „Gemeinsame Suite-Mindeststandards“ in `.nocms/RULES.md`).
+- **Pfade in Suite-Verträgen** (`artifact.path`, `evidence_refs`, Freigaben) beziehen sich auf den Suite-Root und tragen daher das Präfix `website/`, z. B. `website/site/index.html`, `website/archiv/releases/v1.0.0.zip`, `website/.nocms/KNOWLEDGE/belege-claims.md`.
+- **Eine Website je Suite:** `website/` enthält genau eine Website. Weitere eigenständige Websites als separate noCMS-Projekte führen und die Strukturentscheidung in `.nocms/HISTORY/` begründen; keine zweite Website in `site/` mischen.
+- **Grundgerüst:** `input/`, `archiv/`, `.nocms/HISTORY/` (Register: `HISTORY/README.md`) und `.nocms/KNOWLEDGE/` (Inventar: `KNOWLEDGE/README.md`) sind angelegt. `archiv/inputs/` und `archiv/releases/` entstehen beim ersten Import bzw. Release; `site/`, `shared/` und `tests/` erst mit einem Umsetzungsauftrag. Inhalte von `input/` und `archiv/` sind Arbeitsdaten und gehören nicht in ein öffentliches Repository (siehe `.gitignore` im Suite-Root).
+
+**Veröffentlichungsgrenze:** Es dürfen ausschließlich die für die Veröffentlichung freigegebenen Inhalte von `site/` auf den Webserver gelangen. Veröffentliche niemals `AGENT.md`, `.nocms/`, `input/`, `shared/`, `archiv/`, `tests/`, Zugangsdaten oder interne Quelldokumente. Prüfe auch, ob Symlinks oder andere indirekte Verweise private Dateien aus `site/` zugänglich machen. Im Suite-Betrieb gelangen ebenso niemals der Suite-Root, `../.suite/` oder Inhalte anderer Module auf den Webserver; Assets aus Nachbarmodulen werden nur als geprüfte Kopie in `site/` übernommen.
 
 ## 3. Projekt übernehmen: Reihenfolge der Arbeit
 
@@ -98,7 +107,7 @@ Für reine Beratung genügt zunächst ein verständliches Konzept im Gespräch; 
 
 ## 4a. Beratungsauftrag professionell bearbeiten
 
-1. Ausgangslage erfassen: Ziel, Nutzerbedürfnis, vorhandene Website, übergeordnete Marke und bereits bekannte Einschränkungen. Angrenzende Ordner `../marketing/`, `../pr/` oder `../social-media/` nur bei Existenz, Berechtigung und fachlichem Bedarf lesen.
+1. Ausgangslage erfassen: Ziel, Nutzerbedürfnis, vorhandene Website, übergeordnete Marke und bereits bekannte Einschränkungen. Angrenzende Ordner `../marketing/`, `../pr/`, `../social-media/`, `../advertising/` (Kampagnen und Landingpage-Anforderungen), `../creative/` (Corporate Design, Assets) oder `../analytics/` (Messkonzept, Auswertungen) nur bei Existenz, Berechtigung und fachlichem Bedarf lesen.
 2. Beratungsproblem benennen; aus `.nocms/METHODEN.md` **wenige** passende Methoden wählen. Keine automatische Vollanalyse und kein Schema zum Abarbeiten sämtlicher Methoden.
 3. Empfehlung liefern: Diagnose, priorisierte Lösung, aussagekräftige Alternativen, Risiken/Trade-offs, konkreter nächster Schritt. Bei Audit zwischen beobachteten Befunden und bloßen Hypothesen unterscheiden.
 4. Auftrag klären: Beratung und Entwurf dürfen ohne Website-Änderung abgeschlossen werden. Für Implementierung den vereinbarten Umfang und relevante Freigaben beachten.
@@ -194,7 +203,7 @@ Setze verfügbare Browser-, Test- und Validierungswerkzeuge ein. Sind bestimmte 
 3. Erzeuge das ZIP aus dem **Inhalt** von `site/` (im ZIP liegen `index.html` usw. direkt an der Wurzel). Das Paket muss ohne noCMS und ohne private Projektdateien auf statischem Hosting entpackbar sein.
 4. Kontrolliere das Archiv: Vollständigkeit, Lesbarkeit, erwartete Dateien und Ausschluss nicht öffentlicher Inhalte. Überschreibe **niemals** ein bestehendes Release-Archiv stillschweigend.
 5. Veröffentliche genau den geprüften Websitezustand. Überprüfe, soweit Zugriff besteht, das erfolgreiche Deployment. Markiere das Release erst nach dieser Bestätigung als **veröffentlicht**; sonst als vorbereitet/fehlgeschlagen.
-6. Dokumentiere Versionskennung, Datum, Änderungen, Prüfergebnisse, Archivpfad und Veröffentlichungsstatus in `.nocms/HISTORY/` und aktualisiere `.nocms/STATE.md`.
+6. Dokumentiere Versionskennung, Datum, Änderungen, Prüfergebnisse, Archivpfad, **SHA-256 des ZIP** und Veröffentlichungsstatus als eigenen Eintrag in `.nocms/HISTORY/` (Format: `.nocms/HISTORY/README.md`) und aktualisiere `.nocms/STATE.md`. Im Suite-Betrieb ist dieser Hash der `artifact_sha256` der Freigabe (`../.suite/INTERFACES.md`, Freigabe-Mapping).
 
 Das zuletzt veröffentlichte Paket muss erhalten bleiben, bevor ein neuer Release-Zustand aktiv wird. Frühere Release-ZIPs werden nicht überschrieben oder automatisch gelöscht.
 
