@@ -6,7 +6,7 @@
 
 | Dokument | Stand |
 |---|---|
-| Dokumentation | README v0.2 · 25. Oktober 2026 |
+| Dokumentation | README v0.3 · 26. Oktober 2026 |
 | Beschriebene Softwarebasis | Integrierte Suite v0.2 mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
 | Fachbereiche | 8 eigenständig nutzbare Module |
 | Fachmethoden im untersuchten Paket | 469 Markdown-Methodendateien |
@@ -182,6 +182,24 @@ Entwickle ein erstes Konzept für zwölf Monate.
 ### 4.4 Sprachgebrauch in der Suite
 
 Die konkreten Dateien verwenden den Begriff **Agent** als praktischen Einstieg für einen KI-Harness. Fachlich handelt es sich um **Spezialisten mit Methoden und Capabilities**. Ein Agenten-Schwarm oder eine besondere proprietäre Agentenplattform ist keine Voraussetzung.
+
+### 4.5 Lokales Browser-Dashboard
+
+Unter [`.suite/dashboard/`](.suite/dashboard/README.md) steht eine lokale Browseroberfläche für die gesamte Suite bereit: Dateinavigation und Suche, Vorschauen für Markdown, Text, JSON, CSV, Bilder, HTML, PDF und Medien, automatische Anzeige externer Änderungen sowie Chat mit **Codex und Pi**. Die Fachmodule bleiben eigenständig nutzbar.
+
+Installation und Start im Suite-Root mit Python 3.9 oder neuer:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install -r .suite/dashboard/requirements.txt
+.venv/bin/python .suite/dashboard/server/app.py
+```
+
+Im Browser die ausgegebene Adresse öffnen, standardmäßig `http://127.0.0.1:8765`. Stoppen mit **Strg+C**. Host und Port sind in `.suite/dashboard/config.json` konfigurierbar; Port `0` wählt einen freien Port.
+
+Die Dateiansicht funktioniert ohne Agentenprogramm. Für den Chat müssen Codex beziehungsweise Pi im Startterminal verfügbar und eingerichtet sein. Bei einem lokalen Pi-Modell muss auch der Modellserver laufen. Agent und Arbeitsverzeichnis werden separat gewählt; eine geöffnete Datei wird nur auf ausdrücklichen Wunsch als Pfad referenziert. Das Dashboard verändert selbst keine Fachdateien.
+
+**Geprüft:** echte Pi- und Codex-Antworten mit laufender Ausgabe und bestätigtem Abschluss; mit Codex zusätzlich mehrere Sitzungen, externe Dateierstellung und Sitzungswiederaufnahme. Details stehen in der [Dashboard-Anleitung](.suite/dashboard/README.md) und im [Abnahmeprotokoll](.suite/dashboard/ABNAHME.md).
 
 ---
 

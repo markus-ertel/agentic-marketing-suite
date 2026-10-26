@@ -1,0 +1,40 @@
+{
+  "config_version": "0.1",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8765
+  },
+  "suite": {
+    "root": "../..",
+    "show_internal_files": false,
+    "refresh_interval_ms": 2000
+  },
+  "viewer": {
+    "default_mode": "preview",
+    "max_inline_file_mb": 25
+  },
+  "agents": {
+    "default_profile": "pi",
+    "profiles": [
+      {
+        "id": "pi",
+        "label": "Pi",
+        "adapter": "pi-rpc",
+        "command": [
+          "pi",
+          "--mode",
+          "rpc"
+        ]
+      },
+      {
+        "id": "codex",
+        "label": "Codex",
+        "adapter": "codex-appserver",
+        "command": [
+          "codex",
+          "app-server"
+        ]
+      }
+    ]
+  }
+}

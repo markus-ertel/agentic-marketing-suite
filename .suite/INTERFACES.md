@@ -59,3 +59,7 @@ Modul-Freigabefelder sind **lokale Vorstufen**. Für Außenwirkung im Suite-Kont
 | `budget_limit` + `currency` | `approval.approved_budget` + `currency` | – | Druck-/Produktionskosten, falls kostenpflichtig | Versandkosten, falls kostenpflichtig | – |
 | `review_refs` | `claims_reviewed`/`legal_reviewed` sind Booleans → als Review-Datensätze belegen | Prüfungen laut `PUBLISHING.md` | Preflight-/QA-Berichte | `review`-Objekt des Entwurfs | Prüfergebnisse laut `RULES.md` |
 | `execution_external_id` | `external_ids` | `external_post_id` | Druckerei-Auftragsnummer | `provider_ref` (`idempotency_key` ist **keine** Bestätigung) | Deployment-ID/URL |
+
+### Grenzen der strukturellen Prüfung
+
+Der Bundle-Preflight vergleicht die angegebenen Versionen und Hashwerte zwischen Datensätzen. Er berechnet nicht selbst den Hash der referenzierten Datei, authentifiziert keine Person und bestätigt keine tatsächliche externe Ausführung. Die Erkennung von KI-Bezeichnungen im Freigabenamen ist eine Plausibilitätsprüfung, kein Identitätsnachweis. Der ausführende Harness muss Dateiinhalt, Identität, Berechtigungen und Gültigkeit der Freigabe vor einer Aktion unabhängig prüfen. Ein Review mit schwerwiegenden oder kritischen Befunden darf nicht als `not_applicable` eine Freigabe ermöglichen.
