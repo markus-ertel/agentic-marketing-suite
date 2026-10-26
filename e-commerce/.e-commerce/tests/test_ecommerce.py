@@ -389,6 +389,28 @@ class TestSchemas(unittest.TestCase):
         self.assertTrue(self.conform('product-catalog.schema.json', record))
 
 
+class TestMalformedInput(unittest.TestCase):
+    def test_funnel_rejects_invalid_nested_types(self):
+        template = json.loads((EXAMPLES / 'funnel-demo.json').read_text(encoding='utf-8'))
+        for changes in ({'steps': {}}, {'offers': 'invalid'}, {'status': []}, {'experiment': []}, {'version': True}, {'version': 0}, {'currency': 'euro'}):
+            with self.subTest(changes=changes):
+                self.assertTrue(errors(compliance.validate_funnel(dict(template, **changes))))
+        for key in ('steps', 'offers'):
+            invalid = copy.deepcopy(template)
+            invalid[key][0]['id'] = []
+            self.assertTrue(errors(compliance.validate_funnel(invalid)))
+
+    def test_catalog_rejects_invalid_image_types_and_rows(self):
+        for images in ([42], {'url': 'https://example.com/image.jpg'}, ['https://[invalid'], ['https:relative']):
+            self.assertTrue(errors(feed.validate_product(dict(VALID_PRODUCT, additional_image_link=images), 0)))
+        self.assertTrue(errors(feed.validate_catalog([None])))
+        self.assertTrue(errors(feed.validate_product(dict(VALID_PRODUCT, link='https://[invalid'), 0)))
+
+    def test_reference_price_requires_same_currency(self):
+        product = dict(VALID_PRODUCT, sale_price='19.90 EUR', lowest_price_30d='24.90 USD')
+        self.assertTrue(any('Währung' in e for e in errors(feed.validate_product(product, 0))))
+
+
 class TestOffline(unittest.TestCase):
     def test_tools_have_no_network_imports(self):
         for path in TOOLS.glob('*.py'):

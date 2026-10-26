@@ -86,3 +86,7 @@ Modul-Freigabefelder sind **lokale Vorstufen**. Für Außenwirkung im Suite-Kont
 | `failed` | `failed` | – | – / `failed` | Zahlungsabbruch, Checkout-Analyse |
 
 Statusbezeichnungen der Shop-Systeme vor Nutzung in der aktuellen Herstellerdokumentation prüfen; abweichende Status konservativ zuordnen (im Zweifel nicht als Umsatz).
+
+### Grenzen der strukturellen Prüfung
+
+Der Bundle-Preflight vergleicht die angegebenen Versionen und Hashwerte zwischen Datensätzen. Er berechnet nicht selbst den Hash der referenzierten Datei, authentifiziert keine Person und bestätigt keine tatsächliche externe Ausführung. Die Erkennung von KI-Bezeichnungen im Freigabenamen ist eine Plausibilitätsprüfung, kein Identitätsnachweis. Der ausführende Harness muss Dateiinhalt, Identität, Berechtigungen und Gültigkeit der Freigabe vor einer Aktion unabhängig prüfen. Ein Review mit schwerwiegenden oder kritischen Befunden darf nicht als `not_applicable` eine Freigabe ermöglichen.

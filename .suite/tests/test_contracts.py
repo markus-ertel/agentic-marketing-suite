@@ -49,6 +49,11 @@ class TestSuiteContracts(unittest.TestCase):
  def test_review_not_applicable_needs_notes(self):
   with self.assertRaises(CheckError):check('review',review(status='not_applicable'))
   check('review',review(status='not_applicable',notes='Kein Personenbezug, kein Tracking'))
+ def test_not_applicable_cannot_hide_blocking_findings(self):
+  for severity in ('major','critical'):
+   with self.subTest(severity=severity):
+    with self.assertRaises(CheckError):check('review',review(status='not_applicable',notes='Nicht relevant',findings=[dict(severity=severity,message='Rechte fehlen')]))
+  with self.assertRaises(CheckError):check('review',review(status='not_applicable',notes='   '))
  def test_finding_shape_enforced(self):
   with self.assertRaises(CheckError):check('review',review(findings=[dict(severity='info',message='ok ok',foo=1)]))
   with self.assertRaises(CheckError):check('review',review(findings=[dict(severity='info',message='ok ok',evidence_ref=123)]))
@@ -96,6 +101,15 @@ class TestBundle(unittest.TestCase):
   b=copy.deepcopy(BUNDLE);b['artifacts'][0]['status']='published'
   with self.assertRaises(CheckError):check_bundle(b)
   b['approvals'][0].update(execution_status='confirmed',execution_external_id='deploy-123');check_bundle(b)
+ def test_invalid_bundle_records_fail_cleanly(self):
+  for invalid in ([], None, {'id': []}, dict(BUNDLE['reviews'][0],id={})):
+   with self.subTest(record=invalid):
+    b=copy.deepcopy(BUNDLE);b['reviews'].append(invalid)
+    with self.assertRaises(CheckError):check_bundle(b)
+ def test_not_applicable_cannot_bypass_bundle_gate(self):
+  b=copy.deepcopy(BUNDLE)
+  b['reviews'][1].update(status='not_applicable',notes='Nicht anwendbar',findings=[dict(severity='critical',message='Rechte fehlen')])
+  with self.assertRaises(CheckError):check_bundle(b)
  def test_duplicate_ids(self):
   b=copy.deepcopy(BUNDLE);b['reviews'].append(copy.deepcopy(b['reviews'][0]))
   with self.assertRaises(CheckError):check_bundle(b)

@@ -84,7 +84,9 @@ def check(name, record):
             if 'critical' in sev:errors.append('critical finding must be blocked, not warning')
             if not r.get('risk_accepted_by'):errors.append('warning needs risk_accepted_by (authorized instance)')
             elif AI_AUTHORIZER.search(r['risk_accepted_by']):errors.append('risk_accepted_by must not be an AI system')
-        if r['status']=='not_applicable' and not r.get('notes'):errors.append('not_applicable needs justification in notes')
+        if r['status']=='not_applicable':
+            if not r.get('notes', '').strip():errors.append('not_applicable needs justification in notes')
+            if sev&{'major','critical'}:errors.append('not_applicable with major/critical finding')
     if name=='action-approval':
         if AI_AUTHORIZER.search(r['authorizer']):errors.append('authorizer must be a human/accountable role, not an AI system')
         if 'budget_limit' in r and 'currency' not in r:errors.append('budget_limit needs currency')
@@ -110,7 +112,9 @@ def check_bundle(bundle):
         ids=set()
         for i,rec in enumerate(items):
             try:check(name,rec)
-            except CheckError as e:errors.append(f'{key}[{i}]: {e}')
+            except CheckError as e:
+                errors.append(f'{key}[{i}]: {e}')
+                continue
             rid=rec.get('id') if isinstance(rec,dict) else None
             if rid in ids:errors.append(f'{key}: duplicate id {rid}')
             ids.add(rid)

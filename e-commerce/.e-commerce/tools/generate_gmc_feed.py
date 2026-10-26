@@ -22,6 +22,9 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from urllib.parse import urlsplit
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from field_types import load_schema, type_errors
+
 GOOGLE_NS = 'http://base.google.com/ns/1.0'
 ET.register_namespace('g', GOOGLE_NS)
 
@@ -69,6 +72,8 @@ def load_catalog(file_path):
         data = json.loads(path.read_text(encoding='utf-8'))
         if isinstance(data, dict):
             defaults = {k: data[k] for k in ('currency', 'country', 'language') if k in data}
+            if any(not isinstance(value, str) for value in defaults.values()):
+                raise CatalogError('Katalog-Metadaten currency/country/language müssen Text sein')
             data = data.get('products')
         if not isinstance(data, list) or not all(isinstance(p, dict) for p in data):
             raise CatalogError('JSON-Katalog braucht eine Liste "products" aus Objekten')
@@ -130,7 +135,10 @@ def _datetime(value):
 
 
 def _url_finding(product, field):
-    parts = urlsplit(_text(product.get(field)))
+    try:
+        parts = urlsplit(_text(product.get(field)))
+    except ValueError:
+        return 'error', f'{field}: ungültige URL'
     if parts.scheme not in ('http', 'https') or not parts.netloc:
         return 'error', f'{field}: absolute http(s)-URL erwartet'
     if parts.scheme == 'http':
@@ -140,6 +148,9 @@ def _url_finding(product, field):
 
 def validate_product(product, index, default_currency='EUR'):
     """Return a list of findings (severity, sku, message) for one catalog row."""
+    invalid = type_errors(product, load_schema('product-catalog.schema.json')['properties']['products']['items'])
+    if invalid:
+        return [('error', f'Zeile {index + 1}', message) for message in invalid]
     sku = _text(product.get('sku')) or f'Zeile {index + 1}'
     findings = []
 
@@ -158,7 +169,12 @@ def validate_product(product, index, default_currency='EUR'):
             if finding:
                 add(*finding)
     for url in product.get('additional_image_link') or []:
-        if urlsplit(url).scheme not in ('http', 'https'):
+        try:
+            parts = urlsplit(url)
+            valid = parts.scheme in ('http', 'https') and bool(parts.netloc)
+        except ValueError:
+            valid = False
+        if not valid:
             add('error', 'additional_image_link: absolute http(s)-URL erwartet')
 
     availability = _text(product.get('availability'))
@@ -238,7 +254,9 @@ def check_reference_price(price, sale, lowest_30d, exception=None):
     if not _text(lowest_30d):
         return [('error', 'PANGV/Omnibus: sale_price ohne lowest_price_30d (niedrigster Preis der letzten 30 Tage)')]
     try:
-        lowest = parse_price(lowest_30d, currency)[0]
+        lowest, lowest_currency = parse_price(lowest_30d, currency)
+        if lowest_currency != currency:
+            return [('error', 'lowest_price_30d und price in unterschiedlicher Währung')]
     except ValueError as exc:
         return [('error', f'lowest_price_30d: {exc}')]
     if lowest != amount:
@@ -253,8 +271,12 @@ def validate_catalog(products, default_currency='EUR'):
     findings = []
     seen = {}
     groups = {}
+    if not isinstance(products, list):
+        return [('error', 'catalog', 'Produktliste erwartet')]
     for index, product in enumerate(products):
         findings.extend(validate_product(product, index, default_currency))
+        if not isinstance(product, dict):
+            continue
         sku = _text(product.get('sku'))
         if sku:
             if sku in seen:

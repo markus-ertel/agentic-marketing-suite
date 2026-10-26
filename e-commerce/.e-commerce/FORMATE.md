@@ -28,5 +28,6 @@ python3 -m unittest discover -s .e-commerce/tests -v
 
 - `generate_gmc_feed.py` prüft Pflichtattribute, URLs, Verfügbarkeit, Preisformat, GTIN-Prüfziffer, Marke/Identifikatoren, Varianten, Bestand und die 30-Tage-Regel; **Fehler blockieren immer**, `--strict` blockiert auch Warnungen. Vorhandene Dateien werden nur mit `--force` überschrieben.
 - `validate_compliance.py` prüft Funnel-Schutzschalter und Streichpreise im Katalog.
+- Beide Werkzeuge weisen ungültige verschachtelte Eingabetypen verständlich ab. Referenzpreise werden nur innerhalb derselben Währung verglichen.
 - Beide Werkzeuge prüfen eine dokumentierte Auswahl von Regeln. Ein erfolgreicher Lauf ist **kein** Upload, keine Google-Annahme und keine Rechtsfreigabe.
 - Erzeugte Feeds liegen in `e-commerce/feeds/` (Schreib-Owner `e-commerce/`); `../advertising/` referenziert sie, statt sie zu kopieren oder zu ändern.

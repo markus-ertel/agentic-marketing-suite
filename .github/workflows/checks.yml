@@ -21,3 +21,24 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Check documentation, tests and examples
         run: python .suite/tools/check_repository.py
+
+  dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dashboard preview dependency
+        run: python -m pip install -r .suite/dashboard/requirements.txt
+      - name: Test dashboard files, HTTP and adapters
+        run: python -m unittest discover -s .suite/dashboard/tests -v
+      - name: Check browser JavaScript
+        run: node --check .suite/dashboard/web/app.js

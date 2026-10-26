@@ -12,10 +12,12 @@ Standard library only, no network access. Not a legal review and no compliance c
 """
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from field_types import load_schema, type_errors
 from generate_gmc_feed import CatalogError, check_reference_price, load_catalog, parse_price  # noqa: E402
 
 STEP_TYPES = {'landing', 'product', 'checkout', 'order_bump', 'upsell', 'downsell', 'thank_you'}
@@ -38,9 +40,16 @@ def validate_funnel(funnel):
 
     if not isinstance(funnel, dict):
         return [('error', 'funnel', 'JSON-Objekt erwartet')]
+    invalid = type_errors(funnel, load_schema('funnel-offer.schema.json'))
+    if invalid:
+        return [('error', 'funnel', message) for message in invalid]
     for key in ('id', 'version', 'status', 'currency', 'steps', 'offers'):
         if key not in funnel:
             add('error', 'funnel', f'Pflichtfeld fehlt: {key}')
+    if isinstance(funnel.get('version'), int) and funnel['version'] < 1:
+        add('error', 'funnel', 'version muss mindestens 1 sein')
+    if 'currency' in funnel and not re.fullmatch(r'[A-Z]{3}', funnel['currency']):
+        add('error', 'funnel', 'currency als dreistelligen Währungscode angeben')
     status = funnel.get('status')
     if status is not None and status not in STATUSES:
         add('error', 'funnel', f'status ungültig: {status!r}')
