@@ -22,3 +22,5 @@
 - 2026-10-27 – Business-DNA als elfter optionaler Fachbereich integriert: quellen-/statusgetreue Faktenkontexte, konkrete JSON-Requests, Übergabe an Branding und alle übrigen Module, additive Suite-Enums, Dashboard und Git-Ausschlüsse für operative Wissensbestände. Keine automatische Verifikation, Synchronisierung oder Außenwirkung. Veröffentlicht mit v0.2.4.
 
 - 2026-10-27 – Help & Learning als zwölfter optionaler Fachbereich integriert: Orientierung und dokumentbezogene Hilfe, klare Grenzen zu Fachproduktion und Ausführung, bestehender Dashboard-Transport, additive Suite-Enums und Offline-Inventar-/Paketprüfungen. Veröffentlicht mit v0.2.4.
+
+- 2026-10-27 – Harness-Einstieg, freigabegebundene Importdateien, Google-Leseadapter und Terminal-Freigabeübersicht zusammengeführt. Gemeinsames Capability-Register und Repository-Prüfung erfassen beide neuen Adapter/Werkzeuge; keine neue menschliche Freigabe oder echte Konto-/Importabnahme behauptet. Änderungen auf main nach v0.2.4, noch kein neuer Release.

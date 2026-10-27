@@ -13,6 +13,7 @@ Die Suite definiert fachliche Verfahren, Ein-/Ausgaben, Konfiguration und Status
 | `web.redirects` | Build-Werkzeug · Website | [Weiterleitungen](../../website/.nocms/module/redirects/README.md) – exakte lokale Apache-301/302-Regeln |
 | `web.newsletter` | Webmodul · Website | [Newsletter-Anmeldung](../../website/.nocms/module/newsletter/README.md) – ausdrückliches Double-Opt-in, Abmeldung, Export bestätigter Anmeldungen |
 | `suite.platform-export` | Build-Werkzeug · Advertising / Social / noCRM | [Lokale Importdateien](../tools/EXPORT_PLATFORM.md) – konkrete Freigabe, keine Plattformausführung |
+| `analytics.google-read` | Leseadapter · Analytics | [GA4/Search Console](../../analytics/.analytics/tools/FETCH_GOOGLE.md) – autorisierte Berichte, private CSV/Manifest, keine Schreibaktion |
 
 Jede Implementierung enthält `capability.json` gemäß [capability.schema.json](../contracts/capability.schema.json): Zweck, Owner, Typ, Voraussetzungen, Konfiguration, Ein-/Ausgaben, Prüfverfahren, Status und Außenaktionen. Das Register verweist auf die Quelle; es dupliziert keine Methodenbibliotheken. Zusätzliche Anbieteradapter, insbesondere Gmail/Graph, FTPS und besondere Hostingformate, sind **nicht implementiert**. Es gibt keinen unverschlüsselten FTP-Fallback.
 

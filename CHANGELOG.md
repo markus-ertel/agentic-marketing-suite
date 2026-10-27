@@ -1,5 +1,13 @@
 # Änderungen
 
+## Unveröffentlicht
+
+- Dünne Harness-Einstiege und Claude-Code-Befehle für Briefing, Auswertung, Freigabeanforderung und offene Vorgänge.
+- Freigabegebundene lokale Plattformexporte mit Grenzen für Assets, Planzeiten, Budget und Laufzeit; keine automatische Veröffentlichung.
+- Optionaler Google-Leseadapter mit additiven Metriken, korrekten Quellzeitzonen und privaten CSV-/Manifestdateien.
+- Nur lesende Terminal-Freigabeübersicht mit Fehlerstatus bei Schreibsperren oder ungültigen Protokollen/Konfigurationen.
+- CI-Runner für Python-3.9-Kompatibilität auf Ubuntu 24.04 festgelegt.
+
 ## v0.2.4 – 27. Oktober 2026
 
 - Help & Learning als zwölften optionalen Fachbereich integriert: 39 Methoden, 18 Guides, lokale Help-Kontextverträge und ursprüngliche Paket-/Architekturunterlagen. Bestehenden Dashboard-Chat und Dateireferenzen verwenden; keine neue Runtime, Weiterleitungs- oder Freigabeengine. Suite-Verträge, Orientierung, Nachbarmodule und Offline-Prüfungen ergänzt.

@@ -1,0 +1,33 @@
+{
+  "id": "analytics.google-read",
+  "version": "0.1",
+  "owner_module": "analytics",
+  "kind": "adapter",
+  "purpose": "Autorisierte GA4-/Search-Console-Berichtsabfragen in private CSV und Manifest exportieren.",
+  "entrypoint": "analytics/.analytics/tools/fetch_google.py",
+  "configuration": "analytics/.analytics/tools/FETCH_GOOGLE.md",
+  "prerequisites": [
+    "Python 3.9+",
+    "Berechtigtes Google-Konto und read-only OAuth-Token",
+    "GA4-Property-Zeitzone bzw. GSC-Pacific-Time"
+  ],
+  "inputs": [
+    "Quelle, Zeitraum, Dimension",
+    "Externe Credential-Referenz über Umgebung"
+  ],
+  "outputs": [
+    "Neue private CSV",
+    "Datensatzmanifest"
+  ],
+  "checks": [
+    "Simulierte Pagination",
+    "Keine Addition eindeutiger Nutzer",
+    "Quellenzeitzone",
+    "Kein Überschreiben und keine Tokenausgabe"
+  ],
+  "statuses": [
+    "local_files_created",
+    "failed"
+  ],
+  "external_actions": []
+}

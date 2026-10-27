@@ -11,4 +11,4 @@
 Event metrics, identity modeling, consent effects, quotas, thresholding and channel semantics.
 
 ## Betrieb
-Dies ist ein fachliches Profil, **kein funktionierender API-Connector**. Vor echter Anbindung aktuelle Hersteller-Dokumentation, Berechtigungen, Datenschutz und Rate-Limits prüfen. Standardmäßig **read-only**.
+Dieses Quellenprofil wird durch den optionalen [lokalen Leseadapter](../tools/FETCH_GOOGLE.md) ergänzt. Die Implementierung ist mit simulierten Antworten geprüft; eine echte Kontoverbindung ist damit nicht nachgewiesen. Vor echter Anbindung aktuelle Hersteller-Dokumentation, Berechtigungen, Datenschutz und Rate-Limits prüfen. Standardmäßig **read-only**.
