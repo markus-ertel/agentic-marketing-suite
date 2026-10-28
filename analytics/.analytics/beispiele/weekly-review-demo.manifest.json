@@ -1,0 +1,23 @@
+{
+  "dataset_id": "weekly-review-synthetic-only",
+  "source_system": "fictional-test-data",
+  "extracted_at": "2026-10-28T08:00:00+00:00",
+  "time_zone": "Europe/Vienna",
+  "grain": "one synthetic daily row per date x channel",
+  "period_start": "2026-10-14",
+  "period_end": "2026-10-27",
+  "privacy_class": "public",
+  "metric_definitions": {
+    "sessions": {
+      "unit": "count",
+      "aggregation": "sum"
+    },
+    "requests": {
+      "unit": "count",
+      "aggregation": "sum"
+    }
+  },
+  "permissions": "Entirely fictional demonstration only",
+  "notes": "No real customer, account or observed business effect.",
+  "file_sha256": "674dc945a080c4e79563cbd428bd39e82aaacd60dc2b65f4c5c57b3385529a38"
+}

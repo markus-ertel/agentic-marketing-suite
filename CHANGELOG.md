@@ -2,6 +2,8 @@
 
 ## Unveröffentlicht
 
+- Privater, profilgesteuerter Analytics-Wochencheck: ein einmaliger Datenlauf mit nachvollziehbaren Eingaben, gewichteten KPIs, sichtbaren Teilfehlern und optionalem Freigabestatus. Fachliche Einordnung und ausdrücklich gewünschte Zeitplanung bleiben beim vorhandenen Harness; keine neue Suite-Runtime.
+
 - Dünne Harness-Einstiege und Claude-Code-Befehle für Briefing, Auswertung, Freigabeanforderung und offene Vorgänge.
 - Freigabegebundene lokale Plattformexporte mit Grenzen für Assets, Planzeiten, Budget und Laufzeit; keine automatische Veröffentlichung.
 - Optionaler Google-Leseadapter mit additiven Metriken, korrekten Quellzeitzonen und privaten CSV-/Manifestdateien.

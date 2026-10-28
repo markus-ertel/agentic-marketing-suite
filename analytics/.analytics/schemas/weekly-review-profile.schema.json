@@ -1,0 +1,319 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private Weekly Review Profile v0.1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "id",
+    "purpose",
+    "time_zone",
+    "output_dir",
+    "authorization_ref",
+    "model_context",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "time_zone": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "output_dir": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "authorization_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "model_context": {
+      "const": "summaries_only"
+    },
+    "window_days": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 90,
+      "default": 7
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "time_zone",
+          "metrics"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+          },
+          "kind": {
+            "enum": [
+              "csv",
+              "ga4",
+              "gsc"
+            ]
+          },
+          "time_zone": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "metrics": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "numerator"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"
+                },
+                "numerator": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "denominator": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "segment_column": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "segment": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                },
+                "expected_direction": {
+                  "enum": [
+                    "up",
+                    "down",
+                    "unknown"
+                  ]
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "lag_days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "csv_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "manifest_path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "property": {
+            "type": "string",
+            "pattern": "^[0-9]{1,32}$"
+          },
+          "site": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "dimension": {
+            "enum": [
+              "query",
+              "page",
+              "country",
+              "device"
+            ]
+          },
+          "token_env": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]*$"
+          },
+          "allowed_privacy_classes": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "confidential",
+                "internal",
+                "personal",
+                "public",
+                "special_category"
+              ]
+            },
+            "default": [
+              "public",
+              "internal"
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "oneOf": [
+          {
+            "properties": {
+              "kind": {
+                "const": "csv"
+              }
+            },
+            "required": [
+              "csv_path",
+              "manifest_path"
+            ]
+          },
+          {
+            "properties": {
+              "kind": {
+                "const": "ga4"
+              }
+            },
+            "required": [
+              "property"
+            ]
+          },
+          {
+            "properties": {
+              "kind": {
+                "const": "gsc"
+              },
+              "time_zone": {
+                "const": "America/Los_Angeles"
+              }
+            },
+            "required": [
+              "site"
+            ]
+          }
+        ]
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "properties": {
+        "config_path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "logs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": [
+              "label",
+              "path"
+            ],
+            "properties": {
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "include_titles": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "config_path"
+          ]
+        },
+        {
+          "required": [
+            "logs"
+          ]
+        }
+      ],
+      "additionalProperties": false
+    },
+    "schedule": {
+      "type": "object",
+      "required": [
+        "kind",
+        "weekday",
+        "local_time",
+        "time_zone",
+        "missed_run"
+      ],
+      "properties": {
+        "kind": {
+          "const": "harness"
+        },
+        "weekday": {
+          "enum": [
+            "monday",
+            "tuesday",
+            "wednesday",
+            "thursday",
+            "friday",
+            "saturday",
+            "sunday"
+          ]
+        },
+        "local_time": {
+          "type": "string",
+          "pattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"
+        },
+        "time_zone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "missed_run": {
+          "enum": [
+            "ask",
+            "skip",
+            "latest_only"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$comment": "The runtime additionally validates IANA timezones, unique IDs, disjoint source settings, private output location and supported metric semantics. Schedule describes intent, not an installed automation."
+}

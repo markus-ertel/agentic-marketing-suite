@@ -12,3 +12,7 @@
 Der Adaptervertrag liegt unter `integrationen/ADAPTER_CONTRACT.md`. Die technischen Schnittstellenprofile sind Hinweise, keine implementierten API-Verbindungen. Vor jeder echten Verbindung aktuelle Herstellerdokumentation und Kontoberechtigung prüfen. Tokens nie im Projekt ablegen.
 
 - **Analytics Lite (optional):** Aggregierter CSV-Export `date,page,pageviews` aus `../website/` (relativ zum Analytics-Modul) kann als Dateiquelle genutzt werden. Er zählt Seitenaufrufe in UTC, keine eindeutigen Besucher, Sessions, Einwilligungen oder kausalen Wirkungen. Bots/Reloads und Host-Log-Effekte berücksichtigen; keine personenbezogenen Joins aus dem Modul ableiten. Ohne Webmodul unverändert mit anderen geeigneten Quellen arbeiten.
+
+## Wiederkehrender Wochencheck
+
+[weekly_review.py](tools/weekly_review.py) verbindet explizite CSV-/GA4-/GSC-Quellen mit zwei festgelegten Zeitfenstern, additiven KPIs und optional der nur lesenden Suite-Freigabeübersicht. Konfiguration und Ergebnisse bleiben privat außerhalb des Checkouts. [Profil, Status und Grenzen](tools/WEEKLY_REVIEW.md) sind der technische Vertrag; der Harness verantwortet Zugang, fachliche Einordnung und einen ausdrücklich gewünschten Zeitplan. Keine Abhängigkeit von GitHub Actions, cron, launchd oder n8n.

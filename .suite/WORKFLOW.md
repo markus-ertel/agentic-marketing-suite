@@ -48,3 +48,7 @@ Vor Aussagen über Unternehmen oder Produkte bei vorhandenem Business-DNA eine g
 ## Hilfe beim Verstehen und Einstieg
 
 Eine Erklärungs- oder Orientierungsfrage kann `help/` direkt beantworten. Das ist keine zusätzliche Pflichtphase. Für Dokumentfragen Frage, Suite-root-relative Referenz und gegebenenfalls Abschnitt bewusst übergeben; die Referenz allein beweist keine Inhaltslektüre. Help liest nur benötigte berechtigte Passagen oder kennzeichnet eine allgemeine Erklärung. Bei einem Produktionswunsch den tatsächlich vorhandenen Fachbereich mit kopierbarem Auftrag nennen; eine echte Weiterleitung braucht eine passende, autorisierte Harness-Fähigkeit. Help startet keine Nebenaktion und erteilt keine Freigabe.
+
+## Optionale Wochenroutine
+
+Wiederkehrende Analytics-Aufträge verwenden die [Methode Wochencheck](../analytics/.analytics/methoden/reporting/wochencheck.md) und die [private Auftragsvorlage](vorlagen/wochencheck-auftrag.md). Erst einen manuellen Pilotlauf samt fachlicher Einordnung durchführen; danach kann ein ausdrücklich gewünschter Zeitplan im vorhandenen Harness eingerichtet werden ([Einrichtung](vorlagen/zeitplan/HARNESS.md)). Ein reiner Tool-Aufruf liefert nur den Datenteil. Teilweise/blockierte Ergebnisse und ausgefallene Läufe bleiben sichtbar; keine alten Dateien als aktuelle Messung ausgeben. Diese Routine ist kein zusätzlicher Pflichtschritt für andere Aufträge.

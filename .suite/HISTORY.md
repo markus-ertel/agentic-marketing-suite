@@ -24,3 +24,5 @@
 - 2026-10-27 – Help & Learning als zwölfter optionaler Fachbereich integriert: Orientierung und dokumentbezogene Hilfe, klare Grenzen zu Fachproduktion und Ausführung, bestehender Dashboard-Transport, additive Suite-Enums und Offline-Inventar-/Paketprüfungen. Veröffentlicht mit v0.2.4.
 
 - 2026-10-27 – Harness-Einstieg, freigabegebundene Importdateien, Google-Leseadapter und Terminal-Freigabeübersicht zusammengeführt. Gemeinsames Capability-Register und Repository-Prüfung erfassen beide neuen Adapter/Werkzeuge; keine neue menschliche Freigabe oder echte Konto-/Importabnahme behauptet. Änderungen auf main nach v0.2.4, noch kein neuer Release.
+
+- 2026-10-28 – Issue #21: Optionalen privaten Analytics-Wochencheck als Methode, Profil und einmaligen Datenläufer ergänzt. Fachliche Einordnung sowie tatsächliche Zeitplanung bleiben beim vorhandenen Harness. Synthetischer Pilot statt echter Konto-/Zeitplanaktivierung.

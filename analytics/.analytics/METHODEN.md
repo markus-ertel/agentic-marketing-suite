@@ -95,9 +95,10 @@ Aus dem Nutzerauftrag die 1–4 am besten geeigneten Methoden bestimmen. Bei ger
 - [`continuous-learning`](methoden/optimierung/continuous-learning.md) — **Erkenntnisse dauerhaft übernehmen**: Berichte monatlich wiederkehren.
 - [`counterfactual-cost`](methoden/optimierung/counterfactual-cost.md) — **Kosten falscher Entscheidungen**: Unsichere Optimierung teure Folgen haben kann.
 
-## reporting/ (5)
+## reporting/ (6)
 - [`management-report`](methoden/reporting/management-report.md) — **Management-Report mit Handlung**: Regelmäßige Ergebnisübersicht verlangt wird.
 - [`dashboard-spec`](methoden/reporting/dashboard-spec.md) — **Dashboard-Spezifikation**: Eine dauerhafte Visualisierung gebaut werden soll.
 - [`evidenz-ampel`](methoden/reporting/evidenz-ampel.md) — **Evidenzstufen kommunizieren**: Ein Ergebnis unter Unsicherheit berichtet wird.
 - [`storytelling-daten`](methoden/reporting/storytelling-daten.md) — **Data Storytelling ohne Manipulation**: Zahlen Menschen verständlich gemacht werden.
 - [`review-protokoll`](methoden/reporting/review-protokoll.md) — **Analytisches Review / Gegenprüfung**: Eine wichtige Entscheidung abgesichert werden soll.
+- [`wochencheck`](methoden/reporting/wochencheck.md) — **Privater Wochencheck mit Harness**: Wiederkehrende Kennzahlen und offene Freigaben nachvollziehbar prüfen und fachlich einordnen.

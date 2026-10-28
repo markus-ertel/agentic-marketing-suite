@@ -105,3 +105,9 @@ Advertising-Manifeste erlauben additiv `search_ads`; bestehende Manifeste bleibe
 ## Unveröffentlicht: Google-Leseadapter
 
 Der optionale GA4-/Search-Console-Adapter benötigt ein berechtigtes Konto und extern bereitgestellte read-only OAuth-Credentials. Für GA4 die tatsächliche `--time-zone` angeben; GSC verwendet fest `America/Los_Angeles`. Der additive Tagesexport enthält keine eindeutigen `totalUsers`. CSV/Manifest bleiben privat und werden nicht überschrieben. Details und Grenzen: [FETCH_GOOGLE.md](analytics/.analytics/tools/FETCH_GOOGLE.md). Eine echte Kontoabnahme steht separat aus.
+
+## Unveröffentlicht: privater Wochencheck (additiv)
+
+Keine bestehenden Profile, Freigaben oder Zeitpläne werden verändert. Neu sind eine Analytics-Methode, ein privater Profilvertrag und ein einmaliger Datenläufer. Einstieg: [WEEKLY_REVIEW.md](analytics/.analytics/tools/WEEKLY_REVIEW.md). Zunächst die vollständig fiktive Demo in einem neuen privaten Ordner ausführen; produktive Quellen und Lesebefugnis anschließend bewusst konfigurieren. Profile und Ergebnisse gehören außerhalb des Suite-Checkouts, Zugangsdaten ausschließlich in die Umgebung des ausführenden Harness. Standardmäßig sind nur `public`/`internal` erlaubt; weitere Datenklassen benötigen eine ausdrücklich geprüfte Zweck-/Verarbeitungsbefugnis.
+
+Ein technisches `complete` ist kein fertiges Fachurteil. Der Harness ergänzt eine getrennte Einordnung und behandelt Teilfehler oder fehlendes `result.json` sichtbar. Es wird kein Zeitplan installiert: vorhandene Harness-Planung oder lokale Auslöser nur auf ausdrücklichen Auftrag einrichten und tatsächlich prüfen. Der Dashboard-Server übernimmt keine Ausführungs- oder Zeitplanprüfung.
