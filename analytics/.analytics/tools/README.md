@@ -12,3 +12,7 @@ python3 .analytics/tools/evaluate_csv.py \
 ```
 
 Optional `--denominator impressions` für gewichtete Raten, `--segment-column` und `--segment` für Segmentfilter, `--output` für JSON-Datei. Keine Signifikanztests, kein Modell-Fitting, keine Causal-Lift-Auswertung. Vor produktivem Betrieb Quellen, Zeitzone, Granularität, Rechenlogik und Datenschutz prüfen.
+
+## Privater Wochencheck
+
+[weekly_review.py](weekly_review.py) führt einen einmaligen, profilgesteuerten Datenteil aus. [WEEKLY_REVIEW.md](WEEKLY_REVIEW.md) beschreibt Demo, Profil, Berechtigungen, Ausgaben, Datenschutz und vollständige/teilweise/blockierte Ergebnisse. Die fachliche Bewertung und ein optionaler Zeitplan gehören zum Harness.

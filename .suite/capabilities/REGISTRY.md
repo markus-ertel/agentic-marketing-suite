@@ -13,6 +13,7 @@ Die Suite definiert fachliche Verfahren, Ein-/Ausgaben, Konfiguration und Status
 | `web.redirects` | Build-Werkzeug · Website | [Weiterleitungen](../../website/.nocms/module/redirects/README.md) – exakte lokale Apache-301/302-Regeln |
 | `web.newsletter` | Webmodul · Website | [Newsletter-Anmeldung](../../website/.nocms/module/newsletter/README.md) – ausdrückliches Double-Opt-in, Abmeldung, Export bestätigter Anmeldungen |
 | `suite.platform-export` | Build-Werkzeug · Advertising / Social / noCRM | [Lokale Importdateien](../tools/EXPORT_PLATFORM.md) – konkrete Freigabe, keine Plattformausführung |
+| `analytics.weekly-review` | Build-Werkzeug · Analytics | [Privater Wochencheck](../../analytics/.analytics/tools/WEEKLY_REVIEW.md) – einmaliger Datenteil, fachliche Einordnung und optionale Zeitplanung durch den Harness |
 | `analytics.google-read` | Leseadapter · Analytics | [GA4/Search Console](../../analytics/.analytics/tools/FETCH_GOOGLE.md) – autorisierte Berichte, private CSV/Manifest, keine Schreibaktion |
 | `business-dna.customer-feedback` | Quellenadapter · Business-DNA | [Externe Feedback-Evidenz](../../business-dna/.business-dna/integrationen/customer-feedback/README.md) – geprüfter Vorschlag, menschlich bestätigte lokale Übernahme und Hypothesenanalyse |
 

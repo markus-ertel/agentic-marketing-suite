@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1",
+  "id": "demo-weekly-review",
+  "purpose": "Fiktives Beispiel: Anfragen und Datenqualität im Wochenvergleich prüfen.",
+  "time_zone": "Europe/Vienna",
+  "output_dir": "../../../../marketing-privat/weekly-demo",
+  "authorization_ref": "demo:fictitious-data-only-not-real-authorization",
+  "model_context": "summaries_only",
+  "window_days": 7,
+  "sources": [
+    {
+      "id": "web-demo",
+      "kind": "csv",
+      "time_zone": "Europe/Vienna",
+      "csv_path": "weekly-review-demo.csv",
+      "manifest_path": "weekly-review-demo.manifest.json",
+      "lag_days": 1,
+      "metrics": [
+        {
+          "id": "sessions",
+          "numerator": "sessions",
+          "expected_direction": "up",
+          "segment_column": "channel"
+        },
+        {
+          "id": "request-rate",
+          "numerator": "requests",
+          "denominator": "sessions",
+          "expected_direction": "up",
+          "segment_column": "channel"
+        }
+      ]
+    }
+  ],
+  "schedule": {
+    "kind": "harness",
+    "weekday": "monday",
+    "local_time": "07:00",
+    "time_zone": "Europe/Vienna",
+    "missed_run": "ask"
+  }
+}

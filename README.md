@@ -7,10 +7,10 @@
 | Dokument | Stand |
 |---|---|
 | Dokumentation | README v0.3.6 · 28. Oktober 2026 |
-| Beschriebene Softwarebasis | Suite v0.2.4 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
-| Stand auf `main` | Zusätzlich integrierte, noch unveröffentlichte Harness-Einstiege, Plattformexporte, Google-Leseadapter und Terminal-Freigabeübersicht |
+| Beschriebene Softwarebasis | Suite v0.2.5 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
+| Entwicklungsstand | v0.2.5: Harness-Einstiege, Plattformexporte, Google-Leseadapter, Terminal-Freigabeübersicht, Business-DNA-Feedback und privater Wochencheck |
 | Fachbereiche | 12 eigenständig nutzbare Module |
-| Fachmethoden im Repository | 604 Markdown-Methodendateien |
+| Fachmethoden im Repository | 605 Markdown-Methodendateien |
 | Zielgruppe | Unternehmen, Selbstständige, Fachleute und Agenturen; **keine** Agentur- oder Kundenverwaltung als Voraussetzung |
 | Charakter | Architektur, Methodenbibliothek, Arbeitskonventionen, lokale Hilfswerkzeuge; **keine** fertig angebundene All-in-one-SaaS-Anwendung |
 
@@ -331,12 +331,12 @@ Ein Spezialist darf auf berechtigt zugängliche Strategie-, Marken- und Ergebnis
 | **Advertising** | Werbestrategie, kreative Leitidee, Anzeigen, Kampagnen, Media und Shopping | 72 | [`advertising/.advertising/METHODEN.md`](advertising/.advertising/METHODEN.md) |
 | **Creative** | Gestaltung, Art Direction, Corporate Design, Bild, Video, Audio und Print | 71 | [`creative/.creative/METHODEN.md`](creative/.creative/METHODEN.md) |
 | **noCRM** | Individuelle 1:1-Kommunikation, Beziehungskontext, Antworten, Service, Nachbetreuung | 59 | [`noCRM/.nocrm/METHODEN.md`](noCRM/.nocrm/METHODEN.md) |
-| **Analytics** | Datenqualität, Wirkungsbeurteilung, Experimente, Interpretation und Verbesserung | 73 | [`analytics/.analytics/METHODEN.md`](analytics/.analytics/METHODEN.md) |
+| **Analytics** | Datenqualität, Wirkungsbeurteilung, Experimente, Interpretation und Verbesserung | 74 | [`analytics/.analytics/METHODEN.md`](analytics/.analytics/METHODEN.md) |
 | **E-Commerce** | Shop-System-Wahl, Produktdaten und Feeds, Checkout, Order Bumps, Upsells, Preisaktionen, Funnel-Tests | 8 | [`e-commerce/.e-commerce/METHODEN.md`](e-commerce/.e-commerce/METHODEN.md) |
 | **Branding** | Markenstrategie, Identität, Markenarchitektur, Tonalität, Guidelines und Brand Governance | 51 | [`branding/.branding/METHODEN.md`](branding/.branding/METHODEN.md) |
 | **Business-DNA** | Organisationswissen, Claims, Quellenprüfung, Erkenntnisstatus und zweckbezogene Context Packs | 37 | [`business-dna/.business-dna/METHODEN.md`](business-dna/.business-dna/METHODEN.md) |
 | **Help & Learning** | Hilfe, Einstieg, Fachbereichswahl, Dokumentverständnis und realistische Funktionsauskunft | 39 | [`help/.help/METHODEN.md`](help/.help/METHODEN.md) |
-| **Gesamt** | | **604** | |
+| **Gesamt** | | **605** | |
 
 Die Zahlen beschreiben den **Dateibestand**, nicht die Zahl bereits empirisch nachgewiesener, autonom beherrschter Fähigkeiten.
 
@@ -937,6 +937,14 @@ Das [Capability-Register](.suite/capabilities/REGISTRY.md) ergänzt wiederverwen
 
 Die sechs Webmodule sind optional und werden gezielt übernommen. Eine veröffentlichte Website benötigt keinen dauerhaften Suite-/KI-Dienst. PHP wird nur für gewählte serverseitige Funktionen benötigt; statische Suche und Build-Ausgaben bleiben auf statischem Hosting nutzbar. Das Dashboard erhält keine neuen Versand-/Veröffentlichungsrechte. Konkrete Aktualisierung und sichere private Ablage: [MIGRATION.md](MIGRATION.md).
 
+### Privater Wochencheck mit dem Agentenharness
+
+Der [Wochencheck](analytics/.analytics/tools/WEEKLY_REVIEW.md) nutzt ein privates Profil für Quellen, Kennzahlen, Zeitfenster und Lesebefugnis. Der Harness richtet es ein, startet einen manuellen Pilotlauf und ergänzt den technischen Bericht um eine fachliche Einordnung. Erst danach kann er auf ausdrücklichen Wunsch seine vorhandene Zeitplanung oder einen lokalen Auslöser verwenden. Die Suite bringt dafür keinen neuen Scheduler mit. [Auftragsvorlage](.suite/vorlagen/wochencheck-auftrag.md) und [Einrichtungshinweise](.suite/vorlagen/zeitplan/HARNESS.md) führen durch den Ablauf. Die mitgelieferte Demo ist vollständig fiktiv; sie aktiviert keine Konten oder Termine.
+
+Ein produktiver GitHub-Actions-Zeitplan wird nicht mitgeliefert: Kennzahlendaten, Zugangsdaten und Berichte bleiben in der vereinbarten privaten Umgebung. Die Repository-CI prüft ausschließlich Code und fiktive Testdaten.
+
+---
+
 ## 18. Praktische Anwendungsfälle
 
 ### 18.1 Ein einzelner Fachauftrag
@@ -1071,7 +1079,7 @@ Weitere Hinweise unter [`MIGRATION.md`](MIGRATION.md).
 
 ### 20.4 Historie und Änderungen
 
-Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.4 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
+Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.5 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
 
 ---
 
@@ -1116,6 +1124,7 @@ STRUCTURAL_PREFLIGHT_OK (no compliance certification)
 | [`noCRM/.nocrm/tools/preflight.py`](noCRM/.nocrm/tools/preflight.py) | Kommunikationsaktion vorprüfen, **nicht** versenden |
 | [`noCRM/.nocrm/tools/contact_store.py`](noCRM/.nocrm/tools/contact_store.py) | Lokalen offenen Kontaktbestand bearbeiten |
 | [`analytics/.analytics/tools/evaluate_csv.py`](analytics/.analytics/tools/evaluate_csv.py) | CSV-Daten deskriptiv auswerten |
+| [`analytics/.analytics/tools/weekly_review.py`](analytics/.analytics/tools/weekly_review.py) | Privater Wochencheck-Datenteil; fachliche Einordnung und optionaler Zeitplan durch den Harness |
 | [`.suite/tools/pending.py`](.suite/tools/pending.py) | Offene Freigaben nur lesend anzeigen; gesperrte/defekte Protokolle melden Fehler |
 | [`.suite/tools/export_platform.py`](.suite/tools/export_platform.py) | Freigabegebundene lokale Importdateien; keine Plattformausführung ([Grenzen](.suite/tools/EXPORT_PLATFORM.md)) |
 | [`analytics/.analytics/tools/fetch_google.py`](analytics/.analytics/tools/fetch_google.py) | GA4-/Search-Console-Leseadapter mit privater CSV/Manifest-Ausgabe ([Einrichtung](analytics/.analytics/tools/FETCH_GOOGLE.md)) |

@@ -94,19 +94,25 @@ Die Human Approval & Audit Trail Capability v0.1 ist eine additive Erweiterung. 
 - Help vor Funktionsauskünften auf die tatsächliche Installation, passende Quellen und überprüften Testumfang verweisen. Historische Angaben aus dem Paket sind keine aktuelle Versionsgarantie. [Konkrete Integration](help/.help/SUITE.md).
 - Individuelle Anleitungen/Lernnotizen geschützt außerhalb der Bibliothek ablegen. Paket-/Integrationstests ausführen; die dialogischen Akzeptanzfälle und echte Verständlichkeit zusätzlich im Harness prüfen.
 
-## Unveröffentlicht: Harness-Einstieg
+## v0.2.5: Harness-Einstieg
 
 `CLAUDE.md`, `AGENTS.md` und `.cursor/rules/suite.mdc` verweisen auf die bestehenden Regeln. Entwicklung und Marketingaufträge bleiben getrennt. Die Claude-Code-Befehle unter `.claude/commands/` bereiten Arbeit vor, erteilen keine menschliche Freigabe und führen keine Außenaktionen aus. Nach Installation im tatsächlichen Harness prüfen: Einstieg ohne Auftrag, direkter Fachauftrag, Entwicklungsauftrag und Zugriff auf die ausgewählte Kontextquelle. Ein bestandener Repository-Test belegt die automatische Übernahme dieser Dateien nicht.
 
-## Unveröffentlicht: Plattform-Importdateien
+## v0.2.5: Plattform-Importdateien
 
 Advertising-Manifeste erlauben additiv `search_ads`; bestehende Manifeste bleiben gültig. Eigene Validatoren bei Nutzung dieses Blocks aktualisieren. [Exportwerkzeug](.suite/tools/EXPORT_PLATFORM.md) erzeugt nur lokale freigabegebundene Importdateien. Scheduler-CSV unterstützt nur Text/Einzelbild, benötigt bei Planzeiten die tatsächliche Zielzeitzone und verwirft keine zusätzlichen Assets. Google-Ads-Kampagnen bleiben pausiert; Laufzeit-/Kontoeinstellungen und tatsächliche Ausgabengrenzen vor Aktivierung prüfen. Eine echte Importabnahme steht aus.
 
-## Unveröffentlicht: Google-Leseadapter
+## v0.2.5: Google-Leseadapter
 
 Der optionale GA4-/Search-Console-Adapter benötigt ein berechtigtes Konto und extern bereitgestellte read-only OAuth-Credentials. Für GA4 die tatsächliche `--time-zone` angeben; GSC verwendet fest `America/Los_Angeles`. Der additive Tagesexport enthält keine eindeutigen `totalUsers`. CSV/Manifest bleiben privat und werden nicht überschrieben. Details und Grenzen: [FETCH_GOOGLE.md](analytics/.analytics/tools/FETCH_GOOGLE.md). Eine echte Kontoabnahme steht separat aus.
 
-## Unveröffentlicht: externe Kundenfeedback-Evidenz (Issue #27)
+## v0.2.5: privater Wochencheck (additiv)
+
+Keine bestehenden Profile, Freigaben oder Zeitpläne werden verändert. Neu sind eine Analytics-Methode, ein privater Profilvertrag und ein einmaliger Datenläufer. Einstieg: [WEEKLY_REVIEW.md](analytics/.analytics/tools/WEEKLY_REVIEW.md). Zunächst die vollständig fiktive Demo in einem neuen privaten Ordner ausführen; produktive Quellen und Lesebefugnis anschließend bewusst konfigurieren. Profile und Ergebnisse gehören außerhalb des Suite-Checkouts, Zugangsdaten ausschließlich in die Umgebung des ausführenden Harness. Standardmäßig sind nur `public`/`internal` erlaubt; weitere Datenklassen benötigen eine ausdrücklich geprüfte Zweck-/Verarbeitungsbefugnis.
+
+Ein technisches `complete` ist kein fertiges Fachurteil. Der Harness ergänzt eine getrennte Einordnung und behandelt Teilfehler oder fehlendes `result.json` sichtbar. Es wird kein Zeitplan installiert: vorhandene Harness-Planung oder lokale Auslöser nur auf ausdrücklichen Auftrag einrichten und tatsächlich prüfen. Der Dashboard-Server übernimmt keine Ausführungs- oder Zeitplanprüfung.
+
+## v0.2.5: externe Kundenfeedback-Evidenz (Issue #27)
 
 - [Business-DNA-Feedbackverfahren](business-dna/.business-dna/integrationen/customer-feedback/README.md), neue Methode und `/call-notes` übernehmen. Die Werkzeuge benötigen nur Python 3.9+ und geeignete lokale Dateisystemsemantik, keinen spezifischen Harness. Bestehende Quellen-/Claim-Bestände nicht ersetzen.
 - Zwei neue lokale Hüllenverträge (`feedback-intake`, `feedback-proposal`). Decision erweitert sich additiv um `proposal_sha256` und `confirmation_ref`; beide sind beim Feedback-Import erforderlich, für bisherige Datensätze weiterhin optional. Source-/Claim-/Event- und Suite-Kernverträge bleiben unverändert.

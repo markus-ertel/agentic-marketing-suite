@@ -1,0 +1,35 @@
+{
+  "id": "analytics.weekly-review",
+  "version": "0.1",
+  "owner_module": "analytics",
+  "kind": "build-tool",
+  "purpose": "Privaten technischen Wochencheck vorbereiten; fachliche Einordnung durch den Harness.",
+  "entrypoint": "analytics/.analytics/tools/weekly_review.py",
+  "configuration": "analytics/.analytics/tools/WEEKLY_REVIEW.md",
+  "prerequisites": [
+    "Python 3.9+",
+    "Privates Profil und geprüfte Lesebefugnis",
+    "Explizite CSV/Manifest-Dateien oder berechtigte Google-Lesezugänge",
+    "Vorhandener Harness für Fachurteil und optionale Zeitplanung"
+  ],
+  "inputs": [
+    "Privates Profil",
+    "Logischer Stichtag",
+    "Explizite Quellen und optionale Freigabeprotokolle"
+  ],
+  "outputs": [
+    "Neue private Laufartefakte mit Hashes und Ereignissen",
+    "Technischer Bericht und minimierter Harness-Kontext"
+  ],
+  "checks": [
+    "Synthetischer Pilot",
+    "Simulierte Provider und fehlende Daten",
+    "Datenschutzklassen, Dateigrenzen und Unterbrechungen"
+  ],
+  "statuses": [
+    "complete",
+    "partial",
+    "blocked"
+  ],
+  "external_actions": []
+}

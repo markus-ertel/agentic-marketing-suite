@@ -1,6 +1,6 @@
 # Suite State
 
-Version: v0.2.4
+Version: v0.2.5
 Active cross-module request: none
 Status: idle
 Last verified state: initial package creation

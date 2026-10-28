@@ -54,3 +54,7 @@ Zieldefinitionen und zeitbezogene Veränderungen beziehen; tatsächliche Messdat
 ## Optionale Hilfe und Lernen
 
 Bei vorhandenem `../help/` können Verständnisfragen zu Begriffen, Ergebnissen oder dem Einstieg durch Help erklärt werden. Nur die benötigte, berechtigte Dokumentreferenz und Frage übergeben; keine ganzen Kontakt-, Unternehmens- oder Markenbestände kopieren. Help kann einen passenden Auftrag formulieren, übernimmt aber weder diese Fachaufgabe noch menschliche Freigaben oder Ausführungsrechte. Ohne Help direkt und eigenständig weiterarbeiten. [Kontext und Suite-Integration](../help/.help/SUITE.md).
+
+## Optionaler privater Wochencheck
+
+Für wiederkehrende Auswertungen die Methode [Wochencheck](.analytics/methoden/reporting/wochencheck.md) und den [Werkzeugvertrag](.analytics/tools/WEEKLY_REVIEW.md) verwenden. Der Harness richtet ein privates Profil ein, prüft aktuelle Leserechte, startet den einmaligen Datenteil und schreibt anschließend eine getrennte fachliche Einordnung. Ein technisches `complete` ersetzt diese Einordnung nicht. Ein Zeitplan bleibt optional und wird nur im vorhandenen Harness oder lokalen Auslöser tatsächlich eingerichtet. Keine eigene Suite-Runtime und keine automatische Außenaktion.
