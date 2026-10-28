@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Reviewed External Feedback Intake v0.1",
+  "type": "object",
+  "required": [
+    "origin",
+    "sources",
+    "claims"
+  ],
+  "properties": {
+    "origin": {
+      "type": "object",
+      "required": [
+        "kind",
+        "usage_review_ref",
+        "deidentification_review_ref"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "conversation_note",
+            "recording_transcript",
+            "feedback_document"
+          ]
+        },
+        "usage_review_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "deidentification_review_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": {
+        "$ref": "source.schema.json"
+      }
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "$ref": "claim.schema.json"
+      }
+    }
+  },
+  "additionalProperties": false
+}

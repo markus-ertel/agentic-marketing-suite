@@ -1,0 +1,37 @@
+{
+  "id": "business-dna.customer-feedback",
+  "version": "0.1",
+  "owner_module": "business-dna",
+  "kind": "adapter",
+  "purpose": "Reviewed external customer feedback as explicitly confirmed restricted hypotheses in a private versioned store.",
+  "entrypoint": "business-dna/.business-dna/tools/import_feedback.py",
+  "configuration": "business-dna/.business-dna/integrationen/customer-feedback/README.md",
+  "prerequisites": [
+    "Python 3.9+ and filesystem atomic rename/fsync",
+    "Actual source-use and deidentification review",
+    "Current evidenced human decision checked by trusted harness"
+  ],
+  "inputs": [
+    "Redacted intake only, not raw transcripts",
+    "Reviewable proposal and exact hash-bound decision",
+    "Private store, optionally bootstrapped from existing JSONL"
+  ],
+  "outputs": [
+    "Proposal without knowledge import",
+    "Versioned claims/sources/decisions/events and snapshot reference"
+  ],
+  "checks": [
+    "Restricted hypotheses only",
+    "Exact scope and source/base hashes",
+    "No duplicate IDs or silent status promotion",
+    "Idempotent replay and interrupted publication tests"
+  ],
+  "statuses": [
+    "proposed",
+    "checked",
+    "applied",
+    "already_applied",
+    "blocked"
+  ],
+  "external_actions": []
+}

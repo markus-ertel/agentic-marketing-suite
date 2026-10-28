@@ -12,7 +12,7 @@ def main():
     try:
         modules=json.loads((ROOT/'.suite/contracts/work-order.schema.json').read_text())['properties']['lead_module']['enum']
         ids=set();count=0
-        for directory in ('website/.nocms/module','website/.nocms/integrationen','noCRM/.nocrm/integrationen','analytics/.analytics/tools','.suite/tools'):
+        for directory in ('website/.nocms/module','website/.nocms/integrationen','noCRM/.nocrm/integrationen','analytics/.analytics/tools','.suite/tools','business-dna/.business-dna/integrationen'):
             for path in (ROOT/directory).rglob('capability.json'):
                 value=json.loads(path.read_text());check('capability',value)
                 if value['id'] in ids:raise CheckError('Duplicate capability ID')

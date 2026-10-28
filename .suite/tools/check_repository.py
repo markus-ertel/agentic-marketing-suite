@@ -66,7 +66,7 @@ def main():
             '.suite/tests', 'analytics/.analytics/tests',
             'creative/.creative/tests', 'noCRM/.nocrm/tests',
             'social-media/.social-media/tests', 'website/.nocms/tests',
-            'e-commerce/.e-commerce/tests', 'help/.help/tests',
+            'e-commerce/.e-commerce/tests', 'help/.help/tests', 'business-dna/.business-dna/tests',
         )
     ]
     commands.extend([

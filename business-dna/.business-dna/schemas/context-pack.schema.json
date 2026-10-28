@@ -60,6 +60,10 @@
     "version": {
       "type": "string",
       "minLength": 1
+    },
+    "source_snapshot": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "additionalProperties": false

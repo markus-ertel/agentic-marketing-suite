@@ -105,3 +105,11 @@ Advertising-Manifeste erlauben additiv `search_ads`; bestehende Manifeste bleibe
 ## Unveröffentlicht: Google-Leseadapter
 
 Der optionale GA4-/Search-Console-Adapter benötigt ein berechtigtes Konto und extern bereitgestellte read-only OAuth-Credentials. Für GA4 die tatsächliche `--time-zone` angeben; GSC verwendet fest `America/Los_Angeles`. Der additive Tagesexport enthält keine eindeutigen `totalUsers`. CSV/Manifest bleiben privat und werden nicht überschrieben. Details und Grenzen: [FETCH_GOOGLE.md](analytics/.analytics/tools/FETCH_GOOGLE.md). Eine echte Kontoabnahme steht separat aus.
+
+## Unveröffentlicht: externe Kundenfeedback-Evidenz (Issue #27)
+
+- [Business-DNA-Feedbackverfahren](business-dna/.business-dna/integrationen/customer-feedback/README.md), neue Methode und `/call-notes` übernehmen. Die Werkzeuge benötigen nur Python 3.9+ und geeignete lokale Dateisystemsemantik, keinen spezifischen Harness. Bestehende Quellen-/Claim-Bestände nicht ersetzen.
+- Zwei neue lokale Hüllenverträge (`feedback-intake`, `feedback-proposal`). Decision erweitert sich additiv um `proposal_sha256` und `confirmation_ref`; beide sind beim Feedback-Import erforderlich, für bisherige Datensätze weiterhin optional. Source-/Claim-/Event- und Suite-Kernverträge bleiben unverändert.
+- Neue private Generationen erhalten genau einen aktuellen Claim je ID. Alte flache JSONL-Dateien können als Bootstrap dienen und bleiben unverändert; danach `build_context.py --store <wissen>` verwenden. Die alten Dateien werden nicht synchron fortgeschrieben. Andere Leser/Schreiber müssen Snapshot-/Sperrregeln beachten. Vor Übernahme eine Sicherung und Prüfung vorhandener Datensätze ausführen.
+- Context Requests erlauben optional `include_hypotheses` (boolesch, Standard false); CLI `--include-hypotheses`. Nur gezielte nichtöffentliche Analyse mit tatsächlicher Berechtigung; der öffentliche Hypothesenexport ist gesperrt. Status und Unsicherheit bleiben erhalten. `source_snapshot` ist ein optionales Pack-Feld. Eigene strikt prüfende Clients entsprechend ergänzen.
+- Rohdaten, überprüfte Vorschläge, Decisions, Generationen und Backups bleiben private Arbeitsdaten. Echte Nutzungs-/Redigierungsprüfung und menschliche Bestätigung werden nicht durch Felder oder den Harness-Schalter ersetzt. Keine neue Freigabeengine und keine automatische Datenlöschung.
