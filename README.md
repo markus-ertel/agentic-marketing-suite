@@ -7,10 +7,10 @@
 | Dokument | Stand |
 |---|---|
 | Dokumentation | README v0.3.6 · 28. Oktober 2026 |
-| Beschriebene Softwarebasis | Suite v0.2.4 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
-| Entwicklungsstand | Zusätzlich integrierte, noch unveröffentlichte Harness-Einstiege, Plattformexporte, Google-Leseadapter, Terminal-Freigabeübersicht und privater Wochencheck |
+| Beschriebene Softwarebasis | Suite v0.2.5 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
+| Entwicklungsstand | v0.2.5: Harness-Einstiege, Plattformexporte, Google-Leseadapter, Terminal-Freigabeübersicht, Business-DNA-Feedback und privater Wochencheck |
 | Fachbereiche | 12 eigenständig nutzbare Module |
-| Fachmethoden im Repository | 604 Markdown-Methodendateien |
+| Fachmethoden im Repository | 605 Markdown-Methodendateien |
 | Zielgruppe | Unternehmen, Selbstständige, Fachleute und Agenturen; **keine** Agentur- oder Kundenverwaltung als Voraussetzung |
 | Charakter | Architektur, Methodenbibliothek, Arbeitskonventionen, lokale Hilfswerkzeuge; **keine** fertig angebundene All-in-one-SaaS-Anwendung |
 
@@ -334,9 +334,9 @@ Ein Spezialist darf auf berechtigt zugängliche Strategie-, Marken- und Ergebnis
 | **Analytics** | Datenqualität, Wirkungsbeurteilung, Experimente, Interpretation und Verbesserung | 74 | [`analytics/.analytics/METHODEN.md`](analytics/.analytics/METHODEN.md) |
 | **E-Commerce** | Shop-System-Wahl, Produktdaten und Feeds, Checkout, Order Bumps, Upsells, Preisaktionen, Funnel-Tests | 8 | [`e-commerce/.e-commerce/METHODEN.md`](e-commerce/.e-commerce/METHODEN.md) |
 | **Branding** | Markenstrategie, Identität, Markenarchitektur, Tonalität, Guidelines und Brand Governance | 51 | [`branding/.branding/METHODEN.md`](branding/.branding/METHODEN.md) |
-| **Business-DNA** | Organisationswissen, Claims, Quellenprüfung, Erkenntnisstatus und zweckbezogene Context Packs | 36 | [`business-dna/.business-dna/METHODEN.md`](business-dna/.business-dna/METHODEN.md) |
+| **Business-DNA** | Organisationswissen, Claims, Quellenprüfung, Erkenntnisstatus und zweckbezogene Context Packs | 37 | [`business-dna/.business-dna/METHODEN.md`](business-dna/.business-dna/METHODEN.md) |
 | **Help & Learning** | Hilfe, Einstieg, Fachbereichswahl, Dokumentverständnis und realistische Funktionsauskunft | 39 | [`help/.help/METHODEN.md`](help/.help/METHODEN.md) |
-| **Gesamt** | | **604** | |
+| **Gesamt** | | **605** | |
 
 Die Zahlen beschreiben den **Dateibestand**, nicht die Zahl bereits empirisch nachgewiesener, autonom beherrschter Fähigkeiten.
 
@@ -457,7 +457,7 @@ Business-DNA strukturiert Organisationswissen als versionierte Aussagen mit Erke
 
 **Typische Aufträge:** „Strukturiere dieses Firmenprofil“, „Welche Produkteigenschaften sind tatsächlich belegt?“, „Gib Branding nur die passende Ausgangslage“, „Prüfe widersprüchliche Unternehmensangaben“.
 
-Context Packs wählen nach Zweck, Themen, Datum, Claim-/Quellensichtbarkeit und Budget. `planned` bleibt geplant; `verified` ist keine Veröffentlichungsfreigabe. Operative Wissensbestände bleiben standardmäßig aus Git ausgeschlossen. Kein eigener Dienst, keine Pflichtdatenbank und keine automatische Datensammlung. [Integration und CLI](business-dna/.business-dna/SUITE.md) · [Architekturspezifikation](business-dna/Business-DNA-Conceptual-Architecture-Organizational-Knowledge-Specification-v0.1.md).
+Context Packs wählen nach Zweck, Themen, Datum, Claim-/Quellensichtbarkeit und Budget. `planned` bleibt geplant; `verified` ist keine Veröffentlichungsfreigabe. Operative Wissensbestände bleiben standardmäßig aus Git ausgeschlossen. Gezielt bereitgestelltes [Kundenfeedback](business-dna/.business-dna/integrationen/customer-feedback/README.md) lässt sich als geprüfter Vorschlag und nach echter Bestätigung versioniert übernehmen. Hypothesen bleiben im Standardexport ausgeschlossen; ihre nichtöffentliche Analyse verlangt eine ausdrückliche Auswahl. Kein eigener Dienst, keine Pflichtdatenbank und keine automatische Datensammlung. [Integration und CLI](business-dna/.business-dna/SUITE.md) · [Architekturspezifikation](business-dna/Business-DNA-Conceptual-Architecture-Organizational-Knowledge-Specification-v0.1.md).
 
 ### 6.12 Help & Learning – Hilfe, Einstieg und Lernen
 
@@ -1079,7 +1079,7 @@ Weitere Hinweise unter [`MIGRATION.md`](MIGRATION.md).
 
 ### 20.4 Historie und Änderungen
 
-Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.4 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
+Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.5 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
 
 ---
 
@@ -1131,6 +1131,7 @@ STRUCTURAL_PREFLIGHT_OK (no compliance certification)
 | [`help/.help/tools/scan_workspace.py`](help/.help/tools/scan_workspace.py) | Modul-/Methoden-Dateiinventar; Laufzeitstatus bleibt unbekannt |
 | [`help/.help/tools/validate_help.py`](help/.help/tools/validate_help.py) | Help-Bibliotheksstruktur und Beispiele formal prüfen; kein Harness-Test |
 | [`business-dna/.business-dna/tools/lint_records.py`](business-dna/.business-dna/tools/lint_records.py) | Claims/Quellen formal prüfen; keine Wahrheit oder Rechte bestätigen |
+| [`business-dna/.business-dna/tools/import_feedback.py`](business-dna/.business-dna/tools/import_feedback.py) | Geprüftes externes Kundenfeedback als ausdrücklich bestätigte private Hypothesen übernehmen ([Verfahren](business-dna/.business-dna/integrationen/customer-feedback/README.md)) |
 | [`business-dna/.business-dna/tools/build_context.py`](business-dna/.business-dna/tools/build_context.py) | Zweckbezogene Faktenkontexte lokal exportieren; JSON-Anfrage oder Einzelparameter |
 | [`branding/.branding/tools/lint_records.py`](branding/.branding/tools/lint_records.py) | Lokale formale Branding-Datensätze prüfen; keine Authentifizierung oder Rechtsfreigabe |
 | [`branding/.branding/tools/build_brand_context.py`](branding/.branding/tools/build_brand_context.py) | Zweckbezogene Context Packs aus freigegebenen Profilen lokal erzeugen; kein Versand |

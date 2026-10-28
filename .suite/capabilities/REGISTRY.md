@@ -1,4 +1,4 @@
-# Wiederverwendbare Fähigkeiten – v0.2.3
+# Wiederverwendbare Fähigkeiten
 
 Die Suite definiert fachliche Verfahren, Ein-/Ausgaben, Konfiguration und Status. Ein Harness stellt generische Werkzeuge bereit und ruft diese Verfahren auf. Er erfindet weder Zustellstatus noch Veröffentlichungsablauf. Einträge sind optional; kein Fachmodul oder veröffentlichter Webauftritt benötigt einen dauerhaften Suite-Dienst.
 
@@ -15,6 +15,7 @@ Die Suite definiert fachliche Verfahren, Ein-/Ausgaben, Konfiguration und Status
 | `suite.platform-export` | Build-Werkzeug · Advertising / Social / noCRM | [Lokale Importdateien](../tools/EXPORT_PLATFORM.md) – konkrete Freigabe, keine Plattformausführung |
 | `analytics.weekly-review` | Build-Werkzeug · Analytics | [Privater Wochencheck](../../analytics/.analytics/tools/WEEKLY_REVIEW.md) – einmaliger Datenteil, fachliche Einordnung und optionale Zeitplanung durch den Harness |
 | `analytics.google-read` | Leseadapter · Analytics | [GA4/Search Console](../../analytics/.analytics/tools/FETCH_GOOGLE.md) – autorisierte Berichte, private CSV/Manifest, keine Schreibaktion |
+| `business-dna.customer-feedback` | Quellenadapter · Business-DNA | [Externe Feedback-Evidenz](../../business-dna/.business-dna/integrationen/customer-feedback/README.md) – geprüfter Vorschlag, menschlich bestätigte lokale Übernahme und Hypothesenanalyse |
 
 Jede Implementierung enthält `capability.json` gemäß [capability.schema.json](../contracts/capability.schema.json): Zweck, Owner, Typ, Voraussetzungen, Konfiguration, Ein-/Ausgaben, Prüfverfahren, Status und Außenaktionen. Das Register verweist auf die Quelle; es dupliziert keine Methodenbibliotheken. Zusätzliche Anbieteradapter, insbesondere Gmail/Graph, FTPS und besondere Hostingformate, sind **nicht implementiert**. Es gibt keinen unverschlüsselten FTP-Fallback.
 

@@ -41,3 +41,7 @@ Die mitgelieferten Tools sind Referenzwerkzeuge, keine vollwertige Zugriffskontr
 ## Integration in diesem Repository
 
 Business-DNA ist als elfter optionaler Fachbereich registriert. Die CLI kann zusätzlich eine JSON-Anfrage mit `--request` verarbeiten. [Konkrete Übergaben, Statusmapping und private Ablage](.business-dna/SUITE.md). Die ursprünglichen v0.1-Unterlagen bleiben als Herkunftsdokumentation erhalten.
+
+## Externe Quelle: Kundenfeedback
+
+Die aktuelle Entwicklung ergänzt [Kundenfeedback als externe Evidenz](.business-dna/integrationen/customer-feedback/README.md): redigierter Vorschlag, konkrete menschliche Bestätigung, wiederholsichere lokale Übernahme und gezielte nichtöffentliche Hypothesenanalyse. Der Methodenindex umfasst jetzt 37 Methoden; die ursprünglichen v0.1-Paketunterlagen bleiben als Herkunftsstand erhalten. Es wird keine automatische Verifikation oder Anonymisierung behauptet.

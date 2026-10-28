@@ -34,7 +34,7 @@ Business-DNA-`context-request.visibility_max` und Branding-`brand-context-reques
 
 ## Suite-Verträge und Freigaben
 
-Die sechs lokalen Schemas bleiben unter [schemas/](schemas/). Für automatisierte Mehrmodulaufträge gelten zusätzlich [Suite-Verträge](../../.suite/INTERFACES.md): `work-order.lead_module: business-dna`, passende `supporting_modules` und `artifact.owner_module: business-dna`. Dokumente/Context Packs erhalten eine eindeutige Artefakt-ID, Suite-root-relativen Pfad, Version und gegebenenfalls echten SHA-256.
+Die lokalen Schemas einschließlich der beiden additiven Feedback-Hüllen bleiben unter [schemas/](schemas/). Für automatisierte Mehrmodulaufträge gelten zusätzlich [Suite-Verträge](../../.suite/INTERFACES.md): `work-order.lead_module: business-dna`, passende `supporting_modules` und `artifact.owner_module: business-dna`. Dokumente/Context Packs erhalten eine eindeutige Artefakt-ID, Suite-root-relativen Pfad, Version und gegebenenfalls echten SHA-256.
 
 **Keine direkte Statusgleichsetzung:** `verified` beschreibt einen Claim, nicht einen freigegebenen oder veröffentlichten Suite-Artefaktstand. Ein erzeugter Pack ist zunächst `draft`, fachlich geprüft gegebenenfalls `review`. Suite-`approved` braucht die reale menschliche Freigabe der konkreten Datei, Hash und geklärte Rechte; `published` zusätzlich eine bestätigte externe Ausführung. Historische/abgelöste Dokumente werden `archived`, ohne ihre lokale Herkunft oder den Erkenntnisstatus zu löschen.
 
@@ -49,3 +49,9 @@ Methoden und fiktive Beispiele unter `.business-dna/` bleiben versionierbar. Ope
 ## Prüfung
 
 Die Repository-Prüfung führt die Modul-Vertragstests und Integrationstests für tatsächliche CLI-Requests aller Nachbarn, selektive Exporte, Status-/Quellenbezug, Budget, fehlerhafte Anfragen und Git-Ausschlüsse aus. Gesprächsqualität, fachliche Wahrheit und die echten Harness-Fälle aus [TESTFAELLE.md](TESTFAELLE.md) sind zusätzlich bei konkreter Arbeit zu prüfen. Es werden keine realen Firmenangaben verifiziert, Freigaben erzeugt oder Außenaktionen ausgeführt.
+
+## Externe Feedbackquelle
+
+[Kundenfeedback-Integration](integrationen/customer-feedback/README.md) ergänzt zwei Hüllenverträge (`feedback-intake`, `feedback-proposal`); Source-/Claim-/Event-Records behalten ihre bisherigen Verträge. Decision erweitert sich additiv um optionale `proposal_sha256` und `confirmation_ref`, für diesen Import zwingend. Die lokale Übernahme bestätigt weder faktische Wahrheit noch Versand-/Veröffentlichungsrechte.
+
+Context Requests erlauben optional `include_hypotheses: true` nur für berechtigte nichtöffentliche Analyse. Der Standardexport bleibt unverändert. Versionierte private Stores werden mit `--store` gelesen, sonst könnten erhaltene alte flache JSONL-Dateien einen überholten Stand liefern. Kontextpacks können den verwendeten Stand additiv als `source_snapshot` referenzieren.

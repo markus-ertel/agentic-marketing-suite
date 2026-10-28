@@ -72,3 +72,7 @@ Berechtigt nutzbare Produkt-/Unternehmensfakten beziehen. Keine privaten Kontakt
 ## Optionale Hilfe und Lernen
 
 Bei vorhandenem `../help/` können Verständnisfragen zu Begriffen, Ergebnissen oder dem Einstieg durch Help erklärt werden. Nur die benötigte, berechtigte Dokumentreferenz und Frage übergeben; keine ganzen Kontakt-, Unternehmens- oder Markenbestände kopieren. Help kann einen passenden Auftrag formulieren, übernimmt aber weder diese Fachaufgabe noch menschliche Freigaben oder Ausführungsrechte. Ohne Help direkt und eigenständig weiterarbeiten. [Kontext und Suite-Integration](../help/.help/SUITE.md).
+
+## Gezielte Gesprächs-Evidenz
+
+Wenn ein Auftrag zusätzlich Kundensprache für Business-DNA verlangt, [Feedback-Verfahren](../business-dna/.business-dna/integrationen/customer-feedback/README.md) verwenden. Nur geprüfte redigierte Hypothesen vorschlagen, keine Kontaktprofile oder gesamten Gesprächsverläufe übertragen. Business-DNA führt die bestätigte Wissensaufnahme; noCRM behält persönliche Notiz und Folgeentwurf.

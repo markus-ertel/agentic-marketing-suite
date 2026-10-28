@@ -1,8 +1,11 @@
 # Änderungen
 
-## Unveröffentlicht
+## v0.2.5 – 28. Oktober 2026
 
 - Privater, profilgesteuerter Analytics-Wochencheck: ein einmaliger Datenlauf mit nachvollziehbaren Eingaben, gewichteten KPIs, sichtbaren Teilfehlern und optionalem Freigabestatus. Fachliche Einordnung und ausdrücklich gewünschte Zeitplanung bleiben beim vorhandenen Harness; keine neue Suite-Runtime.
+
+- Business-DNA: externe Feedback-Evidenz mit redigiertem Intake, hashgebundenem Übernahmevorschlag, echter Bestätigung, versioniertem privatem Store und wiederholsicherer Übernahme. Neue Methode und `/call-notes`; keine automatisierte Anonymisierung, Verifikation oder Rohdatenübertragung.
+- Context Requests erlauben ausdrücklich gewählte nichtöffentliche Hypothesenanalyse; Standardexport unverändert. `--store` liest konsistente Generationen, `source_snapshot` referenziert den Stand. Decision-Felder und lokale Feedback-Hüllen sind additiv; bestehende Source-/Claim-/Event- und Suite-Verträge bleiben erhalten.
 
 - Dünne Harness-Einstiege und Claude-Code-Befehle für Briefing, Auswertung, Freigabeanforderung und offene Vorgänge.
 - Freigabegebundene lokale Plattformexporte mit Grenzen für Assets, Planzeiten, Budget und Laufzeit; keine automatische Veröffentlichung.

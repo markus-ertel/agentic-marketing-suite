@@ -52,3 +52,7 @@ Bei vorhandener `../.suite/` gelten deren Mindeststandards nach `.business-dna/R
 ## Optionale Hilfe und Lernen
 
 Bei vorhandenem `../help/` können Verständnisfragen zu Begriffen, Ergebnissen oder dem Einstieg durch Help erklärt werden. Nur die benötigte, berechtigte Dokumentreferenz und Frage übergeben; keine ganzen Kontakt-, Unternehmens- oder Markenbestände kopieren. Help kann einen passenden Auftrag formulieren, übernimmt aber weder diese Fachaufgabe noch menschliche Freigaben oder Ausführungsrechte. Ohne Help direkt und eigenständig weiterarbeiten. [Kontext und Suite-Integration](../help/.help/SUITE.md).
+
+## Externe Feedback-Evidenz
+
+Für gezielt bereitgestellte Kundenäußerungen `.business-dna/methoden/erfassung/kundenfeedback-aufnehmen.md` und `.business-dna/integrationen/customer-feedback/README.md` nutzen. Höchstens fünf redigierte, eingeschränkte Hypothesen als prüfbaren Vorschlag vorbereiten; keine automatische Anonymisierung oder menschliche Freigabe behaupten. Übernahme erst nach echter, exakt gebundener Bestätigung und aktueller Harness-Prüfung. Standard-Kontextpacks schließen Hypothesen weiterhin aus; eine ausdrücklich verlangte berechtigte Analyse muss sie separat auswählen und klar kennzeichnen.

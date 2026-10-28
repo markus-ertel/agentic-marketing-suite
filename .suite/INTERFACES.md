@@ -127,3 +127,9 @@ SFTP verwendet `publish`; Mailversand `send`; IMAP-Postfachentwürfe `modify_ext
 ## Optionaler Analytics-Wochencheck
 
 Der additive [Profilvertrag](../analytics/.analytics/schemas/weekly-review-profile.schema.json) legt Quellen, Zeitzonen, KPIs, Datenschutzklassen, private Ausgabe und Lesebefugnis-Referenz fest. Der [Werkzeugvertrag](../analytics/.analytics/tools/WEEKLY_REVIEW.md) definiert unverwechselbare Läufe mit eingefrorenen Eingaben, Hashes, Ereignissen und abschließendem `result.json`. Ohne dieses Abschlussartefakt gilt ein Lauf als unterbrochen. `complete`, `partial` und `blocked` beschreiben ausschließlich den technischen Datenteil; `pending_harness_review` bleibt bis zur separaten fachlichen Einordnung sichtbar. Weder Profil noch technischer Bericht erteilen eine Aktionsfreigabe. `schedule` ist ein Wunsch, kein Nachweis einer laufenden Registrierung.
+
+## Externe Feedback-Evidenz und Hypothesen
+
+Business-DNA ergänzt lokale `feedback-intake`-/`feedback-proposal`-Hüllen, optionale Decision-Felder `proposal_sha256`/`confirmation_ref` und die boolesche Context-Request-Option `include_hypotheses` (Standard false). Source-/Claim-/Event-Verträge und Suite-Kernverträge bleiben unverändert. [Verfahren](../business-dna/.business-dna/integrationen/customer-feedback/README.md).
+
+Eine bestätigte Wissensaufnahme ist weder `verified` noch eine Suite-Aktionsfreigabe. Hypothesen bleiben nichtöffentliche, zweckgebundene Analyse; der öffentliche Hypothesenexport wird gesperrt. `--store` liest den konsistenten versionierten Bestand und setzt optional `source_snapshot` im Pack; direkte flache Bootstrap-Dateien bleiben alte Fassungen.

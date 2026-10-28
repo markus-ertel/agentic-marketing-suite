@@ -26,3 +26,7 @@
 - 2026-10-27 – Harness-Einstieg, freigabegebundene Importdateien, Google-Leseadapter und Terminal-Freigabeübersicht zusammengeführt. Gemeinsames Capability-Register und Repository-Prüfung erfassen beide neuen Adapter/Werkzeuge; keine neue menschliche Freigabe oder echte Konto-/Importabnahme behauptet. Änderungen auf main nach v0.2.4, noch kein neuer Release.
 
 - 2026-10-28 – Issue #21: Optionalen privaten Analytics-Wochencheck als Methode, Profil und einmaligen Datenläufer ergänzt. Fachliche Einordnung sowie tatsächliche Zeitplanung bleiben beim vorhandenen Harness. Synthetischer Pilot statt echter Konto-/Zeitplanaktivierung.
+
+- 2026-10-28 – Kundenfeedback als optionale externe Business-DNA-Evidenz ergänzt: überprüfbare Vorschläge, aktuelle menschliche Bestätigung, konsistente private Generationen und explizite nichtöffentliche Hypothesenanalyse. noCRM bleibt optionales Quellsystem; keine automatische Wahrheit, Anonymisierung, Markenentscheidung oder Außenwirkung. Noch unveröffentlicht.
+
+- v0.2.5 (2026-10-28) – Release bündelt Harness-Einstiege, lokale Plattformexporte, Google-Leseadapter, Terminal-Freigabeübersicht, externe Business-DNA-Feedback-Evidenz und privaten Analytics-Wochencheck. Zwölf Module und 605 Methoden; Governance-/Modulverträge behalten ihre jeweiligen Versionskennungen. Keine produktiven Konten, Terminregistrierungen oder Außenaktionen aktiviert.

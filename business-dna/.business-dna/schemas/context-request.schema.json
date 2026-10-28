@@ -46,6 +46,11 @@
     "as_of": {
       "type": "string",
       "format": "date"
+    },
+    "include_hypotheses": {
+      "type": "boolean",
+      "default": false,
+      "description": "Explicitly include hypotheses for authorized nonpublic analysis without status promotion."
     }
   },
   "additionalProperties": false

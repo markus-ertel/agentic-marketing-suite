@@ -9,3 +9,7 @@ Die Schnittstelle definiert ein Datenformat, keinen Server. Transport per Dateis
 ## Integration in diese Suite
 
 Business-DNA ist als elfter optionaler Fachbereich registriert. Auch Social Media und E-Commerce können begrenzte Faktenkontexte beziehen; Shop-Katalog, Preise und Feeds bleiben beim Shop-Fachbereich. [SUITE.md](SUITE.md) beschreibt konkrete Anfragen, CLI, Statusmapping und Freigabegrenzen. Die ursprünglichen Paketunterlagen bleiben als Herkunftsdokumentation erhalten.
+
+## Kundenäußerungen als externe Evidenz
+
+noCRM kann einen gezielt beauftragten Gesprächsbezug liefern; Rohdaten/Personenbezug verbleiben dort. Wissensübernahme und Hypothesenstatus liegen bei Business-DNA. Die [Feedback-Integration](integrationen/customer-feedback/README.md) beschreibt redigierten Vorschlag, menschliche Bestätigung, versionierte Übernahme und expliziten nichtöffentlichen Hypothesenexport. Keine Pflichtabhängigkeit zu noCRM und keine automatische Übernahme anderer Gesprächsverläufe.
