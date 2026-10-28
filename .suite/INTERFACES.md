@@ -123,3 +123,9 @@ SFTP verwendet `publish`; Mailversand `send`; IMAP-Postfachentwürfe `modify_ext
 ## Help & Learning: Erklärung und Dokumentkontext
 
 `help` ist additiv in den Modul-Enums von `work-order` und `artifact` registriert. Die zwei lokalen Help-Schemas bleiben eigenständig: `help-context` beschreibt Frage/Dokumentreferenz, `help-answer` optionale Antwortmetadaten mit Reifegrad, Quellen und Grenzen. Eine Help-Antwort behauptet keine Ausführung (`execution_claimed: false`); eine vorgeschlagene Modul-Anfrage ist kein ausgeführter Arbeitsauftrag. Reifegrade wie `implemented` oder `tested` sind keine Suite-Freigabe-/Publikationsstatus. [Kontextübergabe und Mapping](../help/.help/SUITE.md).
+
+## Externe Feedback-Evidenz und Hypothesen
+
+Business-DNA ergänzt lokale `feedback-intake`-/`feedback-proposal`-Hüllen, optionale Decision-Felder `proposal_sha256`/`confirmation_ref` und die boolesche Context-Request-Option `include_hypotheses` (Standard false). Source-/Claim-/Event-Verträge und Suite-Kernverträge bleiben unverändert. [Verfahren](../business-dna/.business-dna/integrationen/customer-feedback/README.md).
+
+Eine bestätigte Wissensaufnahme ist weder `verified` noch eine Suite-Aktionsfreigabe. Hypothesen bleiben nichtöffentliche, zweckgebundene Analyse; der öffentliche Hypothesenexport wird gesperrt. `--store` liest den konsistenten versionierten Bestand und setzt optional `source_snapshot` im Pack; direkte flache Bootstrap-Dateien bleiben alte Fassungen.

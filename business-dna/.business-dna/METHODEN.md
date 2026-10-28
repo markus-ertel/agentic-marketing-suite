@@ -1,14 +1,16 @@
-# METHODEN – Register der 36 Fachmethoden
+# METHODEN – Register der 37 Fachmethoden
 
 Der Business-DNA-Spezialist liest **nur passende Methoden**. Keine lineare Pflichtabfolge; nach dem Auftrag zuerst eine konkrete Antwort, kein Fragebogen.
 
-## Erfassung (5)
+## Erfassung (6)
 
 - [Inkrementelle Wissenserfassung](methoden/erfassung/inkrementelles-onboarding.md) – Ein Unternehmen erstmals beschrieben wird oder wesentliche Informationen fehlen.
 - [Dokumenteneingang und kontrollierte Übernahme](methoden/erfassung/dokumentenaufnahme.md) – Neue Unterlagen aus input/ verfügbar sind.
 - [Atomare Aussagen aus Freitext gewinnen](methoden/erfassung/strukturierte-extraktion.md) – Texte viele Behauptungen oder Produktmerkmale enthalten.
 - [Wissenslücken nach Wirkung priorisieren](methoden/erfassung/wissensluecken-priorisieren.md) – Unsichere, unvollständige Profile für konkrete Aufgaben verwendet werden sollen.
 - [Gezielte Rückfrage bei Konflikten](methoden/erfassung/delta-interview.md) – Eine entscheidungsrelevante Lücke nach eigener Recherche bleibt.
+
+- [Kundenfeedback als externe Evidenz aufnehmen](methoden/erfassung/kundenfeedback-aufnehmen.md) – Gezielte Kundenäußerungen als redigierte, bestätigte Hypothesen übernehmen.
 
 ## Identitaet (4)
 

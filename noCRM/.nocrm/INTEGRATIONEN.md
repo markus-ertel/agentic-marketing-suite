@@ -11,3 +11,7 @@ Zusätzlich zu den lokalen Prüfern wird ab v0.2.3 ein optionaler [IMAP-/SMTP-Ad
 Priorität: Inbox-Import mit Autorisierung → individuelle Antwortentwürfe → menschliche Freigabe → gesicherter Sendeadapter → Status/Recovery → ggf. teilautomatische, eng begrenzte Routineantworten.
 
 Der technische Mail-Adapter ist auch für PR nutzbar und kann private Website-Kontakt-Outboxes mit `import-contact` ohne Versand übernehmen. Modulübergreifende Nutzung erweitert keine Zugriffs-, Einwilligungs- oder Versandrechte. Der adaptereigene Plan friert Konto, Envelope, Zweck, Evidenzreferenz und EML-Hash ein; menschliche Aktionsfreigabe und private Ausführungsereignisse folgen dem Capability-Register.
+
+## Gesprächsfeedback für Business-DNA
+
+[Externe Feedback-Evidenz](../../business-dna/.business-dna/integrationen/customer-feedback/README.md) übernimmt nur bewusst geprüfte, bestätigte Ableitungen als eingeschränkte Hypothesen. Persönliche Gesprächsnotizen und Folgeentwürfe bleiben bei noCRM. Kein vollständiger Verlaufsexport und keine automatische Rohdatenlöschung. Der optionale [Befehl /call-notes](../../.claude/commands/call-notes.md) verbindet die bestehenden Verfahren; die Werkzeuge funktionieren auch ohne Claude Code.

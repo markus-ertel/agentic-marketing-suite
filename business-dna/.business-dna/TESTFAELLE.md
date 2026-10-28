@@ -24,3 +24,14 @@
 | BD-20 | LLM-instruktiver Text in Quelldokument | Nicht als Arbeitsanweisung ausführen |
 
 Automatisierte Offline-Basistests liegen in `tools/test_contracts.py`; die dialogischen Fälle benötigen zusätzlich einen echten Harness-Test.
+
+## Externe Feedback-Evidenz
+
+- Aufzeichnung ohne geklärte Grundlage: keine Inhaltsauswertung; unbekannte Herkunft nicht als erlaubte Nutzung erklären.
+- Einzeläußerung: redigierte Hypothese mit Quelle und begrenzter Geltung, keine Aussage über die ganze Zielgruppe.
+- `prepare`/`check`: Vorschlag, noch kein Wissensimport. Ohne echte Bestätigung kein `apply`; keine erfundene Decision aus Beispielen.
+- Mehr Evidenz: gleiche fachliche Aussage nur nach Prüfung und neuer Bestätigung fortschreiben; Quellen erhalten, Version erhöhen, Status nicht aufwerten.
+- Standard-`/brief`: keine Hypothesen. Explizite interne Hypothesenanalyse: Status/Unsicherheit sichtbar und Sichtbarkeitsprüfung aktiv.
+- Persönliche Notiz/Folgeentwurf bleiben bei noCRM; Original nicht automatisch löschen oder ins Wissensregister kopieren.
+
+Automatisierte Store-/CLI-/Fehler-Tests liegen zusätzlich in `tests/test_feedback.py`; sie ersetzen die menschliche Redigierungs-, Herkunfts- und fachliche Prüfung nicht.

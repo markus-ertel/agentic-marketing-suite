@@ -27,3 +27,7 @@
 ## Verbindung zu anderen Verfahren
 
 Kombiniere nach Bedarf mit `wissen/quellenvertrauen`, `compliance/einwilligung-nachweisen`, `kanaele/kanalwahl` und `controlling/antwortqualitaet`. Mehrere Verfahren nur bei erkennbarem Zusatznutzen.
+
+## Optionaler Wissens-Handoff
+
+Für ausdrücklich beauftragte Kundensprache/Einwände kann Business-DNA nach [Feedback-Verfahren](../../../../business-dna/.business-dna/integrationen/customer-feedback/README.md) höchstens fünf redigierte Hypothesen vorbereiten. Personenbezogene Zusammenfassung, Kontakt-ID und Folgeentwurf verbleiben im noCRM-Arbeitsbereich. Eine separate tatsächliche Bestätigung ist vor Wissensübernahme erforderlich; weder diese Methode noch eine Gesprächszusage ist Marketing-/Versandfreigabe.

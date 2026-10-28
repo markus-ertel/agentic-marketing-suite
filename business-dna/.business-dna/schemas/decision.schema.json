@@ -45,6 +45,14 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "proposal_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "confirmation_ref": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "additionalProperties": false

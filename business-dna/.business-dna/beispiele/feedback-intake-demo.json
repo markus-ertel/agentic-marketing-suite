@@ -1,0 +1,37 @@
+{
+  "origin": {
+    "kind": "conversation_note",
+    "usage_review_ref": "demo:fictional-permitted-note",
+    "deidentification_review_ref": "demo:fictional-review-no-real-person"
+  },
+  "sources": [
+    {
+      "source_id": "src-demo-feedback-001",
+      "kind": "human_statement",
+      "locator": "demo:external-feedback-001",
+      "captured_at": "2026-10-28T08:00:00+01:00",
+      "visibility": "restricted",
+      "description": "Fiktive Einzeläußerung, kein echtes Kundengespräch."
+    }
+  ],
+  "claims": [
+    {
+      "claim_id": "claim-demo-feedback-001",
+      "subject": "segment:demo-small-business",
+      "predicate": "objection",
+      "value": "Fiktives Beispiel: Für zusätzliche Werkzeuge fehlt die Zeit.",
+      "status": "hypothesis",
+      "visibility": "restricted",
+      "version": 1,
+      "updated_at": "2026-10-28T08:00:00+01:00",
+      "source_refs": [
+        "src-demo-feedback-001"
+      ],
+      "tags": [
+        "customer_feedback"
+      ],
+      "scope": "Illustratives Einzelgespräch; keine Aussage über Häufigkeit oder ganze Zielgruppe.",
+      "notes": "Vollständig fiktiv. Keine reale Kundeninformation oder bestätigte Markenentscheidung."
+    }
+  ]
+}
