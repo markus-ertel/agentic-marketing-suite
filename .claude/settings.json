@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(*approval_audit.py decide*)",
+      "Bash(*--harness-authorized*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}

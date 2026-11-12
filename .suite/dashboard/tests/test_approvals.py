@@ -12,6 +12,8 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from dashboard_auth import authenticate
 from server.app import DashboardServer, load_config
 from server.approvals import ApprovalView
 
@@ -140,6 +142,7 @@ class ApprovalHTTPTests(unittest.TestCase):
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
         cls.base = 'http://127.0.0.1:' + str(cls.server.server_port)
+        authenticate(cls.server)
 
     @classmethod
     def tearDownClass(cls):

@@ -7,7 +7,7 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'.suite/capabilities'))
-from runtime import CapabilityError, append_execution, require_approval, run_once, snapshot_json
+from runtime import CapabilityError, append_execution, bound_execution_log, require_approval, run_once, snapshot_json
 from approval_audit import record_request, record_decision
 
 
@@ -28,6 +28,20 @@ def approve(root, plan, action, target):
 class CapabilityRuntimeTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
+    def test_one_approval_allows_one_execution(self):
+        log,path,request,event=approve(self.root,{'fixture':True},'publish','sftp:test')
+        _,sha=snapshot_json(path);approval=require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
+        executions=self.root/'executions.jsonl';calls=[]
+        run_once(executions,'key-one','website.sftp',approval,lambda:calls.append(1) or {'status':'confirmed'})
+        with self.assertRaises(CapabilityError):
+            run_once(executions,'key-two','website.sftp',approval,lambda:calls.append(2) or {'status':'confirmed'})
+        self.assertTrue(run_once(executions,'key-one','website.sftp',approval,lambda:calls.append(3))['replayed'])
+        self.assertEqual(calls,[1])
+    def test_execution_log_is_bound_to_the_approval_log(self):
+        approvals=self.root/'approvals.jsonl'
+        self.assertEqual(bound_execution_log(approvals,self.root/'executions.jsonl'),(self.root/'executions.jsonl').absolute())
+        for other in (self.root/'other.jsonl',self.root/'sub'/'executions.jsonl'):
+            with self.subTest(other=other),self.assertRaises(CapabilityError):bound_execution_log(approvals,other)
     def test_exact_frozen_plan_and_scope_required(self):
         log,path,request,event=approve(self.root,{'fixture':True},'publish','sftp:test')
         _,sha=snapshot_json(path)

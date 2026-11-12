@@ -54,6 +54,11 @@ def check_google_ads(manifest):
         if start > end: raise ValueError('invalid dates')
     except (TypeError, KeyError, ValueError, InvalidOperation):
         errors.append('Gültige positive Tages-/Gesamtbudgets und Laufzeit erforderlich')
+    else:
+        # The file carries only a daily budget; the approved total must cover every day of the run.
+        implied = daily * ((end - start).days + 1)
+        if implied > lifetime:
+            errors.append('Tagesbudget × Laufzeit (%s) übersteigt das freigegebene Gesamtbudget (%s)' % (implied, lifetime))
     if manifest.get('platform') != 'google-ads':
         errors.append("platform muss 'google-ads' sein")
     ads = manifest.get('search_ads')

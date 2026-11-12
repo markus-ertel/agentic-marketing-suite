@@ -97,6 +97,14 @@ def require_approval(log, request_id, root, plan_path, action, target, expected_
             'artifact_sha256': request['artifact']['sha256'], 'action': action, 'target': target}
 
 
+def bound_execution_log(approvals, execution_log):
+    """Executions live next to their approval log so a second log cannot hide a repeat."""
+    expected = Path(approvals).absolute().with_name('executions.jsonl')
+    if Path(execution_log).absolute() != expected:
+        raise CapabilityError('Execution log must be executions.jsonl next to the approval log')
+    return expected
+
+
 @contextmanager
 def execution_lock(log):
     path = Path(log).absolute()
@@ -145,6 +153,10 @@ def run_once(log, key, capability, approval, operation):
         events = read_execution_log(path)
         prior = [event for event in events if event['key'] == key]
         identity = {'capability': capability, **approval}
+        approval_event = approval.get('approval_event_id')
+        if approval_event and any(event.get('approval_event_id') == approval_event and event['key'] != key for event in events):
+            # One human approval authorizes one execution; a retry needs a new approval, not a new key.
+            raise CapabilityError('Approval was already used for an execution; request a new approval')
         if prior:
             if any(prior[0].get(field) != value for field, value in identity.items()):
                 raise CapabilityError('Idempotency key was used for a different operation')

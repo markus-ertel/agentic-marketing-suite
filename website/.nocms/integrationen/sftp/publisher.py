@@ -16,7 +16,7 @@ import json
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / '.suite/capabilities'))
 from runtime import (CapabilityError, CheckError, clean_string, digest, load_json, relative_file,
-                     require_approval, run_once, snapshot_json, write_json)
+                     bound_execution_log, require_approval, run_once, snapshot_json, write_json)
 
 PRIVATE = {'.git', '.aws', '.ssh', '.codex', '.nocrm', '.nocms', 'node_modules', '__pycache__'}
 
@@ -220,7 +220,7 @@ def main():
                 raise CapabilityError('Plan changed')
             gate = lambda: require_approval(args.approvals, args.request_id, args.root, args.plan, 'publish', value['target'], loaded_hash)
             approval = gate()
-            result = run_once(args.execution_log, args.key, 'website.sftp', approval, lambda: transfer(value, args.root, revalidate=gate))
+            result = run_once(bound_execution_log(args.approvals, args.execution_log), args.key, 'website.sftp', approval, lambda: transfer(value, args.root, revalidate=gate))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result['status'] in ('archived', 'planned', 'confirmed') else 2
     except (CapabilityError, CheckError, OSError, ValueError, KeyError, TypeError, RuntimeError, zipfile.BadZipFile):

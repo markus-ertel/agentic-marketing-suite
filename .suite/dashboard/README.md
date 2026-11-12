@@ -12,7 +12,7 @@ python3 -m venv .venv
 .venv/bin/python .suite/dashboard/server/app.py
 ```
 
-Danach die ausgegebene Adresse öffnen, standardmäßig `http://127.0.0.1:8765`. Stoppen mit **Strg+C** im Serverterminal. Sind die Abhängigkeiten bereits in Python installiert, genügt `python3 .suite/dashboard/server/app.py`. Ohne Markdownbibliothek bleibt die Dateiansicht verwendbar und zeigt Markdown als Quelltext mit einem Hinweis.
+Danach die ausgegebene Adresse öffnen, standardmäßig `http://127.0.0.1:8765/?token=…`. Das Token wird bei jedem Start neu erzeugt; ohne es antwortet der Server mit 401. Die Adresse nicht weitergeben. Stoppen mit **Strg+C** im Serverterminal. Sind die Abhängigkeiten bereits in Python installiert, genügt `python3 .suite/dashboard/server/app.py`. Ohne Markdownbibliothek bleibt die Dateiansicht verwendbar und zeigt Markdown als Quelltext mit einem Hinweis.
 
 Der Server verwendet Python-Standardbibliothek und natives HTML/CSS/JavaScript. Es gibt keinen Frontend-Build, keinen CDN-Aufruf und keine Inhaltsdatenbank. Die Agentenprogramme sind **optional** und werden erst beim ausdrücklich ausgelösten Verbindungsaufbau gestartet.
 
@@ -20,7 +20,7 @@ Der Server verwendet Python-Standardbibliothek und natives HTML/CSS/JavaScript. 
 
 [config.json](config.json) enthält Host, Port, Suite-Pfad, Vorschaugrenze, Aktualisierungsintervall und Agentenprofile. Änderungen gelten nach einem Serverneustart.
 
-- `server.host`: Standard `127.0.0.1`, für lokale Nutzung.
+- `server.host`: Standard `127.0.0.1`. Erlaubt sind `127.0.0.1`, `localhost` und `::1`; andere Adressen (z. B. `0.0.0.0`) verweigert der Start, außer `server.allow_non_loopback` ist ausdrücklich `true`.
 - `server.port`: `0` bis `65535`; bei `0` wählt das Betriebssystem einen freien Port. Die tatsächliche Adresse wird ausgegeben.
 - `suite.root`: relativ zum **Ordner der verwendeten config.json**, nicht zum Terminal-Arbeitsverzeichnis. `../..` bezeichnet bei der mitgelieferten Datei den Suite-Root.
 - `suite.show_internal_files`: serverseitige Zugriffserlaubnis für interne Punktdateien und -ordner, Standard `false`. Bei `false` sind z. B. `.marketing/` und `.nocrm/` auch über direkte Datei-URLs und Suche gesperrt; der Browser kann dies nicht freischalten. `.suite/` bleibt als gemeinsamer Einstieg zugänglich. Versionsverwaltung, bekannte Zugangsdatenpfade und Schlüsseldateien bleiben auch bei `true` gesperrt. Virtuelle Umgebungen, Python-Caches und `node_modules` werden aus der Navigation ausgespart.
@@ -103,6 +103,10 @@ Der Server hält maximal 2.000 Ereignisse je Verbindung als flüchtigen Transpor
 | POST | `/api/disconnect` | `{session}` Transport schließen |
 
 Alle HTTP-Anfragen benötigen einen einzelnen erlaubten `Host`: `127.0.0.1:<port>`, `localhost:<port>` oder `[::1]:<port>` mit dem tatsächlich gebundenen Port. POST benötigt zusätzlich einen einzelnen `Origin`, der exakt der HTTP-Adresse dieses Hosts entspricht. Fremde Hostnamen sowie fehlende, doppelte oder abweichende Origin-Header werden vor dem Zugriff auf Daten oder Agententransporte abgelehnt. Eigene HTTP-Clients müssen für POST den passenden Origin mitsenden.
+
+Zusätzlich verlangt jede Anfrage das Zugangstoken dieses Starts, als Cookie `ams_dashboard` oder Header `X-Dashboard-Token`. Der Aufruf von `/?token=…` setzt das Cookie (`HttpOnly`, `SameSite=Strict`) und entfernt das Token aus der Adresszeile. Host- und Origin-Prüfung schützen gegen fremde Websites; das Token schützt auch gegen andere lokale Prozesse, die die Startausgabe nicht sehen. Dashboard-Seiten senden `Content-Security-Policy` mit `frame-ancestors 'none'` sowie `X-Frame-Options: DENY`; externe Bilder in Markdown-Vorschauen werden nicht geladen.
+
+Vom Dashboard gestartete Agenten erhalten die Umgebung ohne Zugangsdaten der Suite-Adapter (Variablen auf `_PASSWORD`, `_KEY_FILE`, `_KNOWN_HOSTS_FILE` sowie `GOOGLE_OAUTH_ACCESS_TOKEN`). Zugangsdaten des Agentenanbieters selbst bleiben erhalten.
 
 Es gibt keine API zum Bearbeiten von Suite-Dateien. Die Dateiauslieferung bleibt innerhalb von `suite.root`; sowohl angefragte Pfade als auch aufgelöste Symlink-Ziele unterliegen den Zugriffsregeln. `.git`, `.env*`, bekannte Zugangsdatenverzeichnisse (u. a. `.aws`, `.ssh`, `.codex`), Zugangsdaten-Dateinamen und Schlüssel-/Zertifikatscontainer werden auch bei aktivierter interner Ansicht nicht ausgeliefert. Die Regeln gelten für Baum, Suche, Vorschau, Metadaten, Downloads und Medien. Eine `.gitignore` ist keine Dashboard-Zugriffsliste: reguläre Arbeitsdokumente können angezeigt werden, auch wenn Git sie ignoriert. Unbekannt benannte Geheimnisse werden nicht anhand ihres Inhalts erkannt und gehören weiterhin außerhalb des Suite-Roots.
 

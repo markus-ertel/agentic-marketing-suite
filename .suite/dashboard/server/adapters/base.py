@@ -1,9 +1,22 @@
 """Line-delimited subprocess transport and correlated RPC calls."""
 from collections import deque
 import json
+import os
 import subprocess
 import threading
 import uuid
+
+
+# Credentials of the suite's own executors (mail, SFTP, Google). Agents prepare plans;
+# they must not be able to run the approved action themselves with these secrets.
+EXECUTOR_SECRET_SUFFIXES = ('_PASSWORD', '_KEY_FILE', '_KNOWN_HOSTS_FILE')
+EXECUTOR_SECRET_NAMES = {'GOOGLE_OAUTH_ACCESS_TOKEN'}
+
+
+def agent_environment(environ=None):
+    environ = os.environ if environ is None else environ
+    return {name: value for name, value in environ.items()
+            if name not in EXECUTOR_SECRET_NAMES and not name.upper().endswith(EXECUTOR_SECRET_SUFFIXES)}
 
 
 class Adapter:
@@ -27,7 +40,7 @@ class Adapter:
         self.event('status', status=value)
 
     def start(self, command=None):
-        self.process = subprocess.Popen(command or self.profile['command'], cwd=self.cwd,
+        self.process = subprocess.Popen(command or self.profile['command'], cwd=self.cwd, env=agent_environment(),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         threading.Thread(target=self._errors, args=(self.process,), daemon=True).start()
         threading.Thread(target=self._read, args=(self.process,), daemon=True).start()

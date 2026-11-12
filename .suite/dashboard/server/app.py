@@ -1,8 +1,10 @@
 """Local HTTP/SSE server. Run: python3 .suite/dashboard/server/app.py."""
 import argparse
+import hmac
 import json
 import mimetypes
 import re
+import secrets
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -14,6 +16,12 @@ from server.files import Files
 from server.approvals import ApprovalView, configure_approvals
 
 DASHBOARD = Path(__file__).resolve().parents[1]
+LOOPBACK = {'127.0.0.1', 'localhost', '::1'}
+COOKIE = 'ams_dashboard'
+# Dashboard pages: no framing (clickjacking on permission buttons) and no remote images (tracking beacons).
+PAGE_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "media-src 'self'; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'")
 
 
 def load_config(path):
@@ -31,6 +39,12 @@ def load_config(path):
     server.setdefault('host', '127.0.0.1')
     if not isinstance(server['host'], str) or not server['host']:
         raise ValueError('server.host muss ein Hostname oder eine IP-Adresse sein.')
+    if not isinstance(server.setdefault('allow_non_loopback', False), bool):
+        raise ValueError('server.allow_non_loopback muss true oder false sein.')
+    if server['host'].strip('[]').lower() not in LOOPBACK and not server['allow_non_loopback']:
+        # The dashboard can steer an agent; listening on the network needs an explicit decision.
+        raise ValueError('server.host muss 127.0.0.1, localhost oder ::1 sein '
+                         '(Ausnahme nur mit server.allow_non_loopback: true).')
     suite = config.setdefault('suite', {})
     if not isinstance(suite.get('root', '../..'), str):
         raise ValueError('suite.root muss ein Verzeichnispfad sein.')
@@ -73,6 +87,8 @@ class DashboardServer(ThreadingHTTPServer):
                            show_internal_files=config['suite'].get('show_internal_files', False))
         self.approvals = ApprovalView(config.get('approvals', {}).get('logs', []))
         self.sessions = None
+        # Fresh secret per start: only someone who sees the printed URL can use the API.
+        self.token = secrets.token_urlsafe(32)
         super().__init__((config['server']['host'], config['server']['port']), Handler)
 
     def server_close(self):
@@ -103,7 +119,36 @@ class Handler(BaseHTTPRequestHandler):
                 self.close_connection = True
                 self.reply({'error': 'Nicht erlaubter oder fehlender Origin.'}, 403)
                 return False
-        return True
+        return self.authenticate()
+
+    def presented_token(self):
+        header = self.headers.get('X-Dashboard-Token')
+        if header:
+            return header
+        for part in self.headers.get('Cookie', '').split(';'):
+            name, _, value = part.strip().partition('=')
+            if name == COOKIE:
+                return value
+        return ''
+
+    def authenticate(self):
+        token = self.server.token
+        if hmac.compare_digest(self.presented_token().encode(), token.encode()):
+            return True
+        url = urlsplit(self.path)
+        offered = parse_qs(url.query).get('token', [''])[0]
+        if self.command == 'GET' and url.path == '/' and offered and hmac.compare_digest(offered.encode(), token.encode()):
+            # Move the secret from the URL into an HttpOnly cookie and drop it from the address bar.
+            self.send_response(303)
+            self.send_header('Set-Cookie', f'{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/')
+            self.send_header('Location', '/')
+            self.send_header('Content-Length', '0')
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            return False
+        self.close_connection = True
+        self.reply({'error': 'Nicht angemeldet. Öffne die beim Start im Terminal angezeigte Adresse.'}, 401)
+        return False
 
     def log_message(self, fmt, *args):
         # Do not log prompts, query paths, or file contents.
@@ -117,6 +162,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Content-Security-Policy', PAGE_CSP)
         self.end_headers()
         self.wfile.write(data)
 
@@ -272,7 +319,9 @@ def main():
             from server.sessions import Sessions
             server.sessions = Sessions(config.get('agents', {}), server.files)
             host, port = server.server_address[:2]
-            print(f'Dashboard: http://{host}:{port}  (Stoppen: Strg+C)', flush=True)
+            shown = f'[{host}]' if ':' in host else host
+            print(f'Dashboard: http://{shown}:{port}/?token={server.token}  (Stoppen: Strg+C)', flush=True)
+            print('Die Adresse enthält ein Zugangstoken für diesen Start. Nicht weitergeben.', flush=True)
             server.serve_forever(poll_interval=0.3)
     except KeyboardInterrupt:
         pass

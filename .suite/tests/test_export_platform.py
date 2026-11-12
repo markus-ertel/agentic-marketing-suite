@@ -163,6 +163,16 @@ class ExportRegressionTests(unittest.TestCase):
             manifest['budget']['daily_max'] = value
             self.assertTrue(export_platform.check_google_ads(manifest))
 
+    def test_ads_daily_budget_over_the_run_must_fit_the_approved_total(self):
+        # The CSV carries only the daily budget: 300 per day for 30 days would allow 9,000 against 300 approved.
+        manifest = json.loads(json.dumps(ADS))
+        manifest['budget'].update(daily_max='300', lifetime_max='300')
+        self.assertTrue(any('Gesamtbudget' in e for e in export_platform.check_google_ads(manifest)))
+        manifest['budget'].update(daily_max='10', lifetime_max='300')
+        self.assertEqual(export_platform.check_google_ads(manifest), [])
+        manifest['budget'].update(daily_max='10.01')
+        self.assertTrue(export_platform.check_google_ads(manifest))
+
     def test_revocation_blocks_export_of_the_original_bytes(self):
         request_id = self.approve(self.source, 'spend', 'google-ads:000-000-0000', budget=300)
         events = [json.loads(line) for line in self.log.read_text().splitlines()]
