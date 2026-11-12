@@ -94,6 +94,7 @@ Der Server hält maximal 2.000 Ereignisse je Verbindung als flüchtigen Transpor
 | GET | `/api/file?path=…` | Metadaten und begrenzte Vorschau; `meta=true` nur Metadaten |
 | GET | `/api/raw?path=…` | Originaldatei, Bytebereiche; `download=true` als Download |
 | GET | `/view/<relativer-pfad>` | Getrennte Dokumentansicht mit relativen Ressourcen |
+| GET | `/preview/<vorschau-token>/<relativer-pfad>` | Dieselbe Ansicht für die eingebettete HTML-Vorschau. Sandbox-Frames senden keine Cookies; das nur lesende Vorschau-Token im Pfad (aus `/api/config`) gilt für diesen Start und unterliegt denselben Dateiregeln |
 | GET | `/api/agents` | Programme, Verfügbarkeit und Fähigkeiten |
 | GET | `/api/sessions` | Nur tatsächlich beobachtbare Verbindungen |
 | POST | `/api/sessions` | `{profile, cwd, external_id?}` verbinden |

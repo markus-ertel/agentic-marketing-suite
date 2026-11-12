@@ -175,10 +175,11 @@ class SecurityHTTPTests(unittest.TestCase):
     def test_token_url_sets_http_only_cookie_and_cookie_authorizes(self):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
         try:
-            connection.request('GET', '/?token=' + self.server.token, headers={'Host': self.authority})
+            connection.request('GET', '/?token=' + self.server.token + '&file=a%2Fb.md', headers={'Host': self.authority})
             response = connection.getresponse(); response.read()
             self.assertEqual(response.status, 303)
-            self.assertEqual(response.getheader('Location'), '/')
+            # The secret leaves the address bar; a deep link to a file survives.
+            self.assertEqual(response.getheader('Location'), '/?file=a%2Fb.md')
             cookie = response.getheader('Set-Cookie')
             self.assertIn('HttpOnly', cookie); self.assertIn('SameSite=Strict', cookie)
         finally:
@@ -186,6 +187,16 @@ class SecurityHTTPTests(unittest.TestCase):
         status, _ = self.request('GET', '/api/raw?path=public.txt', self.authority, token=False,
                                  extra_headers=[('Cookie', cookie.split(';')[0])])
         self.assertEqual(status, 200)
+
+    def test_preview_token_reads_files_only_and_keeps_deny_rules(self):
+        base = '/preview/' + self.server.preview_token + '/'
+        self.assertEqual(self.request('GET', base + 'public.txt', self.authority, token=False)[0], 200)
+        self.assertEqual(self.request('GET', '/preview/wrong/public.txt', self.authority, token=False)[0], 401)
+        self.assertEqual(self.request('GET', base + '.git/config', self.authority, token=False)[0], 403)
+        # The preview token is not an API credential.
+        self.assertEqual(self.request('GET', '/api/sessions', self.authority, token=False,
+                                      extra_headers=[('X-Dashboard-Token', self.server.preview_token)])[0], 401)
+        self.assertEqual(self.request('POST', base + 'public.txt', self.authority, 'http://' + self.authority, {}, token=False)[0], 401)
 
     def test_dashboard_pages_cannot_be_framed(self):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)

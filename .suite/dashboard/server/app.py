@@ -9,7 +9,7 @@ import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit, unquote
+from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server.files import Files
@@ -89,6 +89,8 @@ class DashboardServer(ThreadingHTTPServer):
         self.sessions = None
         # Fresh secret per start: only someone who sees the printed URL can use the API.
         self.token = secrets.token_urlsafe(32)
+        # Sandboxed previews send no cookies, so their relative resources carry this read-only token in the path.
+        self.preview_token = secrets.token_urlsafe(32)
         super().__init__((config['server']['host'], config['server']['port']), Handler)
 
     def server_close(self):
@@ -131,17 +133,29 @@ class Handler(BaseHTTPRequestHandler):
                 return value
         return ''
 
+    def preview_path(self, path):
+        prefix = '/preview/'
+        if not path.startswith(prefix):
+            return None
+        offered, _, relative = path[len(prefix):].partition('/')
+        if not hmac.compare_digest(offered.encode(), self.server.preview_token.encode()):
+            return None
+        return unquote(relative)
+
     def authenticate(self):
         token = self.server.token
         if hmac.compare_digest(self.presented_token().encode(), token.encode()):
             return True
         url = urlsplit(self.path)
+        if self.command == 'GET' and self.preview_path(url.path) is not None:
+            return True
         offered = parse_qs(url.query).get('token', [''])[0]
         if self.command == 'GET' and url.path == '/' and offered and hmac.compare_digest(offered.encode(), token.encode()):
             # Move the secret from the URL into an HttpOnly cookie and drop it from the address bar.
             self.send_response(303)
             self.send_header('Set-Cookie', f'{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/')
-            self.send_header('Location', '/')
+            rest = urlencode([(key, value) for key, value in parse_qsl(url.query, keep_blank_values=True) if key != 'token'])
+            self.send_header('Location', '/' + ('?' + rest if rest else ''))
             self.send_header('Content-Length', '0')
             self.send_header('Cache-Control', 'no-store')
             self.end_headers()
@@ -163,6 +177,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'no-referrer')
         self.send_header('Content-Security-Policy', PAGE_CSP)
         self.end_headers()
         self.wfile.write(data)
@@ -189,7 +204,8 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == '/api/config':
             config = self.server.config
             return self.reply({'suite': {k: v for k, v in config['suite'].items() if k != 'root'},
-                               'viewer': config['viewer'], 'default_profile': config.get('agents', {}).get('default_profile')})
+                               'viewer': config['viewer'], 'preview_base': '/preview/' + self.server.preview_token + '/',
+                               'default_profile': config.get('agents', {}).get('default_profile')})
         if url.path == '/api/approvals':
             return self.reply(self.server.approvals.snapshot())
         if url.path == '/api/modules':
@@ -200,6 +216,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(files.metadata(arg('path')) if arg('meta') == 'true' else files.preview(arg('path')))
         if url.path == '/api/raw':
             return self.raw(arg('path'), arg('download') == 'true')
+        preview = self.preview_path(url.path)
+        if preview is not None:
+            return self.raw(preview)
         if url.path.startswith('/view/'):
             return self.raw(unquote(url.path[len('/view/'):]))
         if url.path == '/api/agents':
@@ -242,6 +261,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Accept-Ranges', 'bytes')
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Content-Type-Options', 'nosniff')
+            # Preview URLs carry a token; never pass them to external hosts.
+            self.send_header('Referrer-Policy', 'no-referrer')
             self.send_header('Content-Security-Policy', "sandbox; default-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; media-src 'self'; font-src 'self'")
             if download:
                 from urllib.parse import quote
