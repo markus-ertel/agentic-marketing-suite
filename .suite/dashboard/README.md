@@ -12,7 +12,7 @@ python3 -m venv .venv
 .venv/bin/python .suite/dashboard/server/app.py
 ```
 
-Danach die ausgegebene Adresse öffnen, standardmäßig `http://127.0.0.1:8765`. Stoppen mit **Strg+C** im Serverterminal. Sind die Abhängigkeiten bereits in Python installiert, genügt `python3 .suite/dashboard/server/app.py`. Ohne Markdownbibliothek bleibt die Dateiansicht verwendbar und zeigt Markdown als Quelltext mit einem Hinweis.
+Danach die ausgegebene Adresse öffnen, standardmäßig `http://127.0.0.1:8765/#token=…`. Das Token wird bei jedem Start neu erzeugt; ohne es antworten die Daten- und Agentenendpunkte mit 401; die statische Anmeldeseite bleibt erreichbar. Die Adresse nicht weitergeben. Stoppen mit **Strg+C** im Serverterminal. Sind die Abhängigkeiten bereits in Python installiert, genügt `python3 .suite/dashboard/server/app.py`. Ohne Markdownbibliothek bleibt die Dateiansicht verwendbar und zeigt Markdown als Quelltext mit einem Hinweis.
 
 Der Server verwendet Python-Standardbibliothek und natives HTML/CSS/JavaScript. Es gibt keinen Frontend-Build, keinen CDN-Aufruf und keine Inhaltsdatenbank. Die Agentenprogramme sind **optional** und werden erst beim ausdrücklich ausgelösten Verbindungsaufbau gestartet.
 
@@ -20,7 +20,7 @@ Der Server verwendet Python-Standardbibliothek und natives HTML/CSS/JavaScript. 
 
 [config.json](config.json) enthält Host, Port, Suite-Pfad, Vorschaugrenze, Aktualisierungsintervall und Agentenprofile. Änderungen gelten nach einem Serverneustart.
 
-- `server.host`: Standard `127.0.0.1`, für lokale Nutzung.
+- `server.host`: ausschließlich `127.0.0.1` (Standard) oder `localhost`. Andere Bindungen werden auch mit einem alten `allow_non_loopback`-Eintrag abgewiesen.
 - `server.port`: `0` bis `65535`; bei `0` wählt das Betriebssystem einen freien Port. Die tatsächliche Adresse wird ausgegeben.
 - `suite.root`: relativ zum **Ordner der verwendeten config.json**, nicht zum Terminal-Arbeitsverzeichnis. `../..` bezeichnet bei der mitgelieferten Datei den Suite-Root.
 - `suite.show_internal_files`: serverseitige Zugriffserlaubnis für interne Punktdateien und -ordner, Standard `false`. Bei `false` sind z. B. `.marketing/` und `.nocrm/` auch über direkte Datei-URLs und Suche gesperrt; der Browser kann dies nicht freischalten. `.suite/` bleibt als gemeinsamer Einstieg zugänglich. Versionsverwaltung, bekannte Zugangsdatenpfade und Schlüsseldateien bleiben auch bei `true` gesperrt. Virtuelle Umgebungen, Python-Caches und `node_modules` werden aus der Navigation ausgespart.
@@ -94,6 +94,7 @@ Der Server hält maximal 2.000 Ereignisse je Verbindung als flüchtigen Transpor
 | GET | `/api/file?path=…` | Metadaten und begrenzte Vorschau; `meta=true` nur Metadaten |
 | GET | `/api/raw?path=…` | Originaldatei, Bytebereiche; `download=true` als Download |
 | GET | `/view/<relativer-pfad>` | Getrennte Dokumentansicht mit relativen Ressourcen |
+| GET | `/preview/<vorschau-token>/<relativer-pfad>` | Dieselbe Ansicht für die eingebettete HTML-Vorschau. Sandbox-Frames senden keine Cookies; das nur lesende Vorschau-Token im Pfad (aus `/api/config`) gilt für diesen Start und unterliegt denselben Dateiregeln |
 | GET | `/api/agents` | Programme, Verfügbarkeit und Fähigkeiten |
 | GET | `/api/sessions` | Nur tatsächlich beobachtbare Verbindungen |
 | POST | `/api/sessions` | `{profile, cwd, external_id?}` verbinden |
@@ -103,6 +104,12 @@ Der Server hält maximal 2.000 Ereignisse je Verbindung als flüchtigen Transpor
 | POST | `/api/disconnect` | `{session}` Transport schließen |
 
 Alle HTTP-Anfragen benötigen einen einzelnen erlaubten `Host`: `127.0.0.1:<port>`, `localhost:<port>` oder `[::1]:<port>` mit dem tatsächlich gebundenen Port. POST benötigt zusätzlich einen einzelnen `Origin`, der exakt der HTTP-Adresse dieses Hosts entspricht. Fremde Hostnamen sowie fehlende, doppelte oder abweichende Origin-Header werden vor dem Zugriff auf Daten oder Agententransporte abgelehnt. Eigene HTTP-Clients müssen für POST den passenden Origin mitsenden.
+
+Projektinhalte und Agentenendpunkte verlangen das Zugangstoken dieses Starts, als Cookie `ams_dashboard`, Header `X-Dashboard-Token` oder `Authorization: Bearer <Starttoken>`. Der Browser tauscht `#token=…` über `POST /api/auth` gegen das Cookie (`HttpOnly`, `SameSite=Strict`) und entfernt das Fragment. Alte Startlinks `/?token=…` werden weiter per Redirect unterstützt, aber nicht mehr ausgegeben. Die statische Anmeldeseite, JavaScript und CSS enthalten keine Projektinhalte und sind ohne Token erreichbar. Host- und Origin-Prüfung schützen gegen fremde Websites; das Token schützt auch gegen andere lokale Prozesse, die die Startausgabe nicht sehen. Dashboard-Seiten senden `Content-Security-Policy` mit `frame-ancestors 'none'` sowie `X-Frame-Options: DENY`; externe Bilder in Markdown-Vorschauen werden nicht geladen.
+
+Freigabe-Rückfragen von Codex zeigen bei Dateiänderungen jede betroffene Datei mit Art der Änderung und Diff, bei Befehlen Befehl und Verzeichnis. Sind die Änderungen nicht bekannt, sagt die Rückfrage das ausdrücklich.
+
+Vom Dashboard gestartete Agenten erhalten die Umgebung ohne Zugangsdaten der Suite-Adapter (Variablen auf `_PASSWORD`, `_KEY_FILE`, `_KNOWN_HOSTS_FILE` sowie `GOOGLE_OAUTH_ACCESS_TOKEN`). Zugangsdaten des Agentenanbieters selbst bleiben erhalten.
 
 Es gibt keine API zum Bearbeiten von Suite-Dateien. Die Dateiauslieferung bleibt innerhalb von `suite.root`; sowohl angefragte Pfade als auch aufgelöste Symlink-Ziele unterliegen den Zugriffsregeln. `.git`, `.env*`, bekannte Zugangsdatenverzeichnisse (u. a. `.aws`, `.ssh`, `.codex`), Zugangsdaten-Dateinamen und Schlüssel-/Zertifikatscontainer werden auch bei aktivierter interner Ansicht nicht ausgeliefert. Die Regeln gelten für Baum, Suche, Vorschau, Metadaten, Downloads und Medien. Eine `.gitignore` ist keine Dashboard-Zugriffsliste: reguläre Arbeitsdokumente können angezeigt werden, auch wenn Git sie ignoriert. Unbekannt benannte Geheimnisse werden nicht anhand ihres Inhalts erkannt und gehören weiterhin außerhalb des Suite-Roots.
 
@@ -139,3 +146,5 @@ Versionen und Testergebnisse sind im Abnahmeprotokoll dokumentiert. Bei Protokol
 ## Dieselbe Freigabeübersicht ohne Server
 
 [Terminal-Werkzeug pending.py](../tools/pending.py) liest die konfigurierten Freigabeprotokolle ohne Dashboard-Start. `--config` wählt dieselbe Dashboard-Konfiguration; `--json` liefert strukturierte Ausgabe, `--strict` signalisiert offene Vorgänge mit Exit 1. Bei unklaren/gesperrten Protokollen oder Konfigurationsfehlern gilt Exit 2. Es werden weder Entscheidungen noch Dateien verändert. [Details](../APPROVALS.md).
+
+Agenten erhalten standardmäßig nur PATH, HOME, Benutzer-, Sprach-, Terminal- und temporäre Verzeichnisvariablen. Modellvariablen ausdrücklich über `agents.profiles[].env_allow` freigeben, etwa `["OPENAI_API_KEY"]`. Versand-, Deployment- und Freigabeschlüssel werden auch bei ausdrücklicher Auswahl nicht vererbt. HOME und Dateisystemrechte sind eine eigene Grenze: [getrennte Ausführung](../EXECUTOR.md) einrichten. Unbekannte oder gekürzte Codex-Datei-Diffs bieten keine Freigabe an; auch die Interaktions-API weist eine solche Zustimmung ab. Die Freigabeansicht ist eine Struktur-/Statusprojektion, keine kryptographische Authentizitätsprüfung.
