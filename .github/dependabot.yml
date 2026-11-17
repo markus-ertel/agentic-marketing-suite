@@ -1,0 +1,11 @@
+# Weekly update proposals; every update arrives as a reviewable pull request, nothing merges by itself.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /.suite/dashboard
+    schedule:
+      interval: weekly
