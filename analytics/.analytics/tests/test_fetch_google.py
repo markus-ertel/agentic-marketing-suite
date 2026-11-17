@@ -101,9 +101,11 @@ class FetchRegressionTests(unittest.TestCase):
         self.assertEqual(starts, [0, 25000])
         self.assertEqual(len(rows), 25000)
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict('os.environ', {'GOOGLE_OAUTH_ACCESS_TOKEN': 'secret'}):
-            response = {'rows': [dict(GSC_PAGE['rows'][0], keys=['2026-10-01', 'fictional query'])]}
+            response = {'rows': [dict(GSC_PAGE['rows'][0], keys=['2026-10-01', '=HYPERLINK("https://evil.example","x")'])]}
             code = fetch_google.main(['gsc', '--site', 'sc-domain:example.org', '--dimension', 'query', '--out-dir', temp], post=lambda *a: response, today=date(2026, 10, 27))
             self.assertEqual(code, 0)
+            # Outsiders can seed search queries; they must arrive as text, not as a formula.
+            self.assertIn(',"\'=HYPERLINK(', next(Path(temp).glob('*.csv')).read_text())
             self.assertEqual(json.loads(next(Path(temp).glob('*.manifest.json')).read_text())['privacy_class'], 'confidential')
 
     def test_timezone_overrides_cannot_mislabel_source_and_errors_redact_tokens(self):

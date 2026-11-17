@@ -2,12 +2,14 @@
 """Read-only, standard-library CSV comparison for additive counts and weighted rates.
 No causality, significance or API integrations are implied.
 """
+import os
 import argparse
 import csv
 import datetime as dt
 import json
 import math
 import pathlib
+from pathlib import Path
 import sys
 
 
@@ -97,6 +99,30 @@ def analyze(path, date_column, numerator, denominator, period_a, period_b, segme
             'warnings':warnings,'recommendation':suggestion}
 
 
+
+def safe_output(path):
+    """Write only new files below the current directory: no overwrite, no symlink, no escape."""
+    base = Path.cwd().resolve()
+    target = (base / Path(path)).resolve()
+    if target != base and base not in target.parents:
+        raise ValueError('Output must stay inside the current working directory')
+    for parent in [base / Path(path), *(base / Path(path)).parents]:
+        if parent == base:
+            break
+        if parent.is_symlink():
+            raise ValueError('Output path must not contain symlinks')
+    if target.exists():
+        raise ValueError('Output already exists; choose a new file name')
+    return target
+
+
+def write_new_text(path, text):
+    target = safe_output(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(str(target), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
+        stream.write(text)
+
 def main(argv=None):
     p=argparse.ArgumentParser(description='Deskriptiver Vergleich CSV-Zeitfenster (keine Kausalanalyse).')
     p.add_argument('--input',required=True,type=pathlib.Path)
@@ -116,8 +142,8 @@ def main(argv=None):
         print('PRECHECK_FAIL:',str(e),file=sys.stderr); return 2
     output=json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)+'\n'
     if a.output:
-        a.output.parent.mkdir(parents=True,exist_ok=True)
-        a.output.write_text(output,encoding='utf-8')
+        try:write_new_text(a.output,output)
+        except (ValueError,OSError) as e:print('OUTPUT_BLOCKED:',str(e),file=sys.stderr);return 2
     else: print(output,end='')
     return 0
 if __name__=='__main__': raise SystemExit(main())

@@ -176,6 +176,18 @@ class ExportRegressionTests(unittest.TestCase):
         manifest['budget'].update(daily_max='10.01')
         self.assertTrue(export_platform.check_google_ads(manifest))
 
+    def test_formula_like_cells_block_the_import_file(self):
+        manifest = json.loads(json.dumps(ADS))
+        manifest['search_ads']['ad_groups'][0]['headlines'][0] = '=HYPERLINK("x")'
+        self.assertEqual(export_platform.check_google_ads(manifest), [])
+        self.source.write_text(json.dumps(manifest))
+        with self.assertRaises(CapabilityError) as error:
+            export('google-ads', self.source, self.root / 'ads.csv', self.root, check_only=True)
+        self.assertIn('Headline 1', str(error.exception))
+        manifest['search_ads']['ad_groups'][0]['headlines'][0] = '-20 % Rabatt'
+        self.source.write_text(json.dumps(manifest))
+        self.assertEqual(export('google-ads', self.source, self.root / 'ads.csv', self.root, check_only=True)['check'], 'pass')
+
     def test_revocation_blocks_export_of_the_original_bytes(self):
         request_id = self.approve(self.source, 'spend', 'google-ads:000-000-0000', budget=300)
         events = [json.loads(line) for line in self.log.read_text().splitlines()]

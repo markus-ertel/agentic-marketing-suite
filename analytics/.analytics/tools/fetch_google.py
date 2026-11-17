@@ -17,6 +17,14 @@ import sys
 from urllib import parse, request
 from zoneinfo import ZoneInfo
 
+
+def neutralize(value):
+    """Same rule as .suite/capabilities/csv_safety.py, inlined so the module stays standalone."""
+    if isinstance(value, str) and value and (value[0] in '=@\t\r' or (
+            value[0] in '+-' and len(value) > 1 and not (value[1].isdigit() or value[1] in ' .,'))):
+        return "'" + value
+    return value
+
 GA4_URL = 'https://analyticsdata.googleapis.com/v1beta/properties/%s:runReport'
 GSC_URL = 'https://www.googleapis.com/webmasters/v3/sites/%s/searchAnalytics/query'
 # Distinct users are deliberately absent: daily/channel users cannot be added.
@@ -101,14 +109,16 @@ def write_dataset(out_dir, dataset_id, columns, rows, metrics, source, start, en
     stream = io.StringIO()
     writer = csv.DictWriter(stream, fieldnames=columns, lineterminator='\n')
     writer.writeheader()
-    writer.writerows(rows)
+    # Search queries and page paths come from outsiders; never let them run as spreadsheet formulas.
+    writer.writerows({key: neutralize(value) if key not in metrics else value for key, value in row.items()} for row in rows)
     manifest = {'dataset_id': dataset_id, 'source_system': source,
                 'extracted_at': (now or datetime.now(timezone.utc)).isoformat(timespec='seconds'),
                 'time_zone': time_zone, 'grain': 'one row per ' + ' x '.join(c for c in columns if c not in metrics),
                 'period_start': start.isoformat(), 'period_end': end.isoformat(),
                 'privacy_class': privacy_class, 'metric_definitions': metrics,
                 'permissions': 'Read-only API export; query/page values can contain personal or confidential data',
-                'notes': '%d rows. Platform-reported values; sampling, thresholds and consent gaps possible.' % len(rows)}
+                'notes': '%d rows. Platform-reported values; sampling, thresholds and consent gaps possible. '
+                         'Text cells that look like spreadsheet formulas are prefixed with an apostrophe.' % len(rows)}
     paths = (out_dir / (dataset_id + '.csv'), out_dir / (dataset_id + '.manifest.json'))
     created = []
     try:

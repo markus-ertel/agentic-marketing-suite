@@ -3,6 +3,7 @@
 Usage: python creative_preflight.py /path/to/creative-job.json [--report report.json]
 Exit 0 = structurally acceptable draft/proof; 2 = blocking structural issues.
 """
+import os
 import json, argparse, sys, hashlib, re
 from pathlib import Path
 
@@ -54,13 +55,39 @@ def check(job):
     # A report reference does not prove it exists or validates a real PDF.
     return {'ok':not problems,'blockers':problems,'warnings':warnings,'scope':'manifest_structure_only','print_ready_claim':False}
 
+
+def safe_output(path):
+    """Write only new files below the current directory: no overwrite, no symlink, no escape."""
+    base = Path.cwd().resolve()
+    target = (base / Path(path)).resolve()
+    if target != base and base not in target.parents:
+        raise ValueError('Output must stay inside the current working directory')
+    for parent in [base / Path(path), *(base / Path(path)).parents]:
+        if parent == base:
+            break
+        if parent.is_symlink():
+            raise ValueError('Output path must not contain symlinks')
+    if target.exists():
+        raise ValueError('Output already exists; choose a new file name')
+    return target
+
+
+def write_new_text(path, text):
+    target = safe_output(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(str(target), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    with os.fdopen(descriptor, 'w', encoding='utf-8') as stream:
+        stream.write(text)
+
 def main():
     p=argparse.ArgumentParser();p.add_argument('manifest');p.add_argument('--report');a=p.parse_args()
     try: job=json.loads(Path(a.manifest).read_text(encoding='utf-8'))
     except Exception as e: print(json.dumps({'ok':False,'blockers':['JSON-Ladefehler: '+str(e)]},ensure_ascii=False,indent=2));return 2
     if not isinstance(job,dict):print(json.dumps({'ok':False,'blockers':['JSON muss Objekt sein']},ensure_ascii=False));return 2
     result=check(job);result['manifest_sha256']=hashlib.sha256(Path(a.manifest).read_bytes()).hexdigest()
-    if a.report:Path(a.report).write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    if a.report:
+        try:write_new_text(a.report,json.dumps(result,ensure_ascii=False,indent=2)+'\n')
+        except (ValueError,OSError) as e:print('REPORT_BLOCKED:',e,file=sys.stderr);return 2
     print(json.dumps(result,ensure_ascii=False,indent=2))
     return 0 if result['ok'] else 2
 

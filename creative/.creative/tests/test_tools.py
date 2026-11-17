@@ -20,6 +20,17 @@ class TestCreative(unittest.TestCase):
     def test_svg_rejects_absurd_format(self):
         bad=copy.deepcopy(job);bad['print_spec']['trim_width_mm']=99999
         with self.assertRaises(ValueError):sp.make(bad)
+    def test_outputs_stay_inside_working_directory_and_never_overwrite(self):
+        import os,tempfile
+        with tempfile.TemporaryDirectory() as d:
+            old=os.getcwd();os.chdir(d)
+            try:
+                sp.write_new_text('proofs/a.svg','x');self.assertEqual(Path(d,'proofs/a.svg').read_text(),'x')
+                for bad in ('proofs/a.svg','../escape.svg',str(Path(d).parent/'abs.svg')):
+                    with self.subTest(bad=bad),self.assertRaises(ValueError):sp.write_new_text(bad,'y')
+                Path(d,'link').symlink_to(Path(d).parent)
+                with self.assertRaises(ValueError):pf.write_new_text('link/x.json','y')
+            finally:os.chdir(old)
     def test_svg_has_no_pdfx_claim(self):
         self.assertIn('NOT PRINT READY',sp.make(job))
 if __name__=='__main__':unittest.main()
