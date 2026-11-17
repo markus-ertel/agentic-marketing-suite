@@ -49,7 +49,13 @@ def check_files():
                     if href.startswith('#') or urlsplit(href).scheme:
                         continue
                     target = unquote(href.split('#', 1)[0])
-                    if target and not (path.parent / target).exists():
+                    if not target:
+                        continue
+                    # Never probe the runner's filesystem outside the repository (existence oracle in CI logs).
+                    resolved = (path.parent / target).resolve()
+                    if resolved != ROOT and ROOT not in resolved.parents:
+                        errors.append(f'{relative}: link target escapes repository {href}')
+                    elif not resolved.exists():
                         errors.append(f'{relative}: missing local link target {href}')
     print(f'Documentation: {counts["Markdown"]} Markdown, {counts["JSON"]} JSON files', flush=True)
     for error in errors:

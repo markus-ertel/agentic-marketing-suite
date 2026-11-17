@@ -129,4 +129,8 @@ Ein technisches `complete` ist kein fertiges Fachurteil. Der Harness ergänzt ei
 - **Gemeinsame Sperrliste:** Dashboard, SFTP-Publisher und E-Mail-Anhänge verwenden `.suite/capabilities/private_files.py`. Zugangsdaten, Schlüssel, `token.json`, `client_secret*`, Freigabe-/Ausführungsprotokolle sowie für Deploys und Anhänge Datenbankdumps (`.sql`, `.sqlite`, `.db`, `.bak`) werden nicht ausgeliefert, angehängt oder veröffentlicht.
 - **Google-Token:** `--token-env`/`token_env` muss mit `GOOGLE_` beginnen. Abweichende Variablennamen umbenennen.
 - **`.gitignore`:** ergänzt um Schlüssel- und Tokendateien, lokale Harness-Konfiguration (`.mcp.json`, `.cursor/mcp.json`, `.claude/settings.local.json`) sowie `*.eml`, `inbound-*.json` und `delivery-events.jsonl`. Bereits versionierte Dateien dieser Art mit `git rm --cached` entfernen.
+- **noCRM-Kontakte:** `contact_store.py` serialisiert Schreibzugriffe über `contacts.csv.lock` und speichert Zellen mit führendem `=`, `+`, `-`, `@`, Tab oder Wagenrücklauf mit vorangestelltem `'`. Kontakt-IDs dürfen nicht so beginnen.
+- **noCRM-Entwurfsschema:** `draft.schema.json` enthält jetzt die von `preflight.py` geprüften Felder `context_verified`, `within_24h`, `template_approved`, `escalation_route_confirmed`, `recipient_initiated`, `direct_ai_interaction` und `ai_disclosure_confirmed` (jeweils boolesch).
+- **Artefaktpfade:** `~`, Steuerzeichen und Laufwerksbuchstaben werden abgelehnt.
+- **Linkprüfung:** Links, die aus dem Repository hinausführen, sind Fehler und werden nicht mehr auf dem Prüfrechner nachgeschlagen.
 

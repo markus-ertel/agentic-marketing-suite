@@ -16,4 +16,4 @@
 
 ## Einfacher lokaler Init-Modus
 
-`.nocrm/tools/contact_store.py` kann den Kontaktindex und einen leeren Ereignisspeicher bei ausdrücklichem Aufruf erstellen; nur Einzelbenutzer-Demo, keine Datenbanktransaktionen über parallele Prozesse.
+`.nocrm/tools/contact_store.py` kann den Kontaktindex und einen leeren Ereignisspeicher bei ausdrücklichem Aufruf erstellen; nur Einzelbenutzer-Demo, keine Datenbank. Schreibvorgänge sind über eine Sperrdatei serialisiert, damit parallele Agenten keine Kontakte überschreiben. Zellen, die mit `=`, `+`, `-`, `@`, Tab oder Wagenrücklauf beginnen, werden mit `'` gespeichert, damit Tabellenprogramme sie nicht als Formel ausführen.
