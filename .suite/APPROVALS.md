@@ -1,5 +1,7 @@
 # Human Approval & Audit Trail Capability v0.1
 
+**Live-Ausführung:** Mail und SFTP verlangen zusätzlich die administrativ eingerichtete [getrennte Ausführung](EXECUTOR.md). Signaturprüfung und geschützte Protokolle ergänzen sich; ein Flag allein erteilt keine Ausführungsberechtigung.
+
 Eine gemeinsame, optionale Fähigkeit für konkrete Freigabeanforderungen, menschliche Entscheidungen und dauerhaft gespeicherte Ereignisse. Die Fachmodule bleiben eigenständig. Es gibt keinen Freigabeserver, keine neue Benutzerverwaltung und keine automatische Aktion. Die bestehenden Verträge für Artefakte, Reviews und Aktionsfreigaben bleiben gültig.
 
 ## Ablauf und Verantwortungen
@@ -37,6 +39,16 @@ Das Werkzeug erzeugt eine exklusive Sidecar-Sperre, validiert vor jedem Anhänge
 
 **Vertrauensgrenze:** Das ist ein append-only arbeitendes Hilfswerkzeug, kein manipulationssicherer Speicher und kein Identitätsnachweis. Wer Schreibrechte auf die Dateien hat, könnte sie außerhalb des Werkzeugs ändern, vollständig zurücksetzen oder entfernen. Der Harness verantwortet vertrauenswürdige Erfassung, Zugriffsrechte, geschützte Backups und gegebenenfalls extern gesicherte Prüfpunkte. Eine plausibel aussehende Zeichenfolge in `actor` oder `evidence_ref` authentifiziert niemanden. Keine Geheimnisse, vollständigen Kundennachrichten oder unnötigen personenbezogenen Daten ins Protokoll kopieren. Aufbewahrung, Löschrechte und Sperrkonzepte organisatorisch festlegen; „nicht überschreiben“ ist kein unbegrenztes personenbezogenes Archiv.
 
+**Signierte Entscheidungen und Hash-Kette:** Jede neue Zeile enthält `prev_hash`, den SHA-256 der vorherigen Zeile; jede nachträgliche Änderung früherer Einträge bricht die Kette. Entscheidungen werden mit einem HMAC-Schlüssel des freigebenden Harness signiert (`signature`). `require_approval` und damit alle Adapter und Exporte akzeptieren **nur signierte** Freigaben, deren vertrauenswürdig konfigurierter Schlüssel **außerhalb** des Suite-Ordners liegt und nur für seinen Besitzer lesbar ist. Beim Erfassen von Entscheidungen und bei manuellen Exporten wird er über `SUITE_APPROVAL_KEY_FILE` gewählt; Live-Adapter binden ihn an `approval_key_file` der root-verwalteten Policy. Unsignierte Entscheidungen (`decide --unsigned`) bleiben reine Dokumentation.
+
+**Wirksam nur mit getrennten Rechten:** Der Schlüssel schützt nur, wenn der KI-Agent ihn nicht lesen kann. Für Live-Adapter verpflichtend gemäß [EXECUTOR.md](EXECUTOR.md):
+1. Einen eigenen Betriebssystembenutzer (z. B. `suite-approver`) für Entscheidungen und Ausführung anlegen. Nur dieser erzeugt den Schlüssel: `approval_audit.py keygen --out ~suite-approver/.suite-approval.key` (Dateirechte 0600).
+2. Der Agent läuft unter dem normalen Benutzer ohne Leserecht auf diese Datei. Das Dashboard gibt Variablen auf `_KEY_FILE` ohnehin nicht an Agenten weiter.
+3. `decide` und die Adapteraufrufe mit `--harness-authorized` laufen ausschließlich als `suite-approver`, z. B. über `sudo -u suite-approver`, aus der geschützten Installation. `decide` verwendet `SUITE_APPROVAL_KEY_FILE`; für Live-Adapter gilt ausschließlich die geschützte Policy. Dem Agentenkonto kein sudo-Recht auf das Ausführungskonto geben.
+4. Nach jeder Entscheidung `approval_audit.py checkpoint` ausführen und das Ergebnis außerhalb der Suite ablegen (z. B. Passwortmanager, Ticket). `check --expect EVENTS:HEAD` erkennt später entfernte oder umgeschriebene Einträge.
+
+Läuft alles unter einem Benutzer, kann der Agent den Schlüssel lesen; dann bleibt die Freigabe eine Dokumentationshilfe. Der HMAC-Schlüssel authentifiziert den Harness, nicht die Person: wer entschieden hat, belegt weiterhin `evidence_ref`.
+
 ## Verwendung
 
 Fiktive, strukturell prüfbare Beispiele liegen unter [approval-demo/](beispiele/approval-demo/). Sie zeigen keine reale Freigabe. Für eigene Arbeit erstellt der Spezialist eine neue Anforderung anhand dieser Struktur und der tatsächlichen Dateien/Prüfberichte. Das Artefakt wird für den zu prüfenden Entwurf typischerweise als `review` erfasst. Alte Aktionsfreigaben werden nicht automatisch als menschliche Ereignisse importiert.
@@ -52,8 +64,14 @@ python3 .suite/tools/approval_audit.py decide \
   --decision /privater/pfad/decision.json \
   --root /pfad/zur/suite --log /privater/pfad/approvals.jsonl
 
-# Read-only: vollständige Struktur/Kette prüfen bzw. Status ableiten.
+# Einmalig, als freigebender Benutzer: Signaturschlüssel außerhalb der Suite erzeugen.
+python3 .suite/tools/approval_audit.py keygen --out /privat/approver/.suite-approval.key
+export SUITE_APPROVAL_KEY_FILE=/privat/approver/.suite-approval.key
+
+# Read-only: vollständige Struktur/Kette prüfen bzw. Status ableiten; Prüfpunkt extern sichern.
 python3 .suite/tools/approval_audit.py check --log /privater/pfad/approvals.jsonl
+python3 .suite/tools/approval_audit.py checkpoint --log /privater/pfad/approvals.jsonl
+python3 .suite/tools/approval_audit.py check --log /privater/pfad/approvals.jsonl --expect 12:<head>
 python3 .suite/tools/approval_audit.py status --log /privater/pfad/approvals.jsonl
 ```
 
