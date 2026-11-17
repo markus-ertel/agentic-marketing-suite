@@ -178,7 +178,7 @@ class WeeklyReviewTests(unittest.TestCase):
         self.assertEqual(cli.returncode,1,cli.stderr)
         self.assertEqual(json.loads(cli.stdout)['status'],'partial')
         source=self.value['sources'][0]
-        source.update(kind='ga4',property='12345',token_env='WEEKLY_TEST_ABSENT_TOKEN')
+        source.update(kind='ga4',property='12345',token_env='GOOGLE_WEEKLY_TEST_ABSENT_TOKEN')
         del source['csv_path'];del source['manifest_path'];self.save()
         with patch.dict(weekly.os.environ,{},clear=True):
             result=self.result(self.run_review())

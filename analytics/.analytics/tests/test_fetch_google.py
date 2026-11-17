@@ -21,6 +21,12 @@ GSC_PAGE = {'rows': [{'keys': ['2026-10-01'], 'clicks': 10, 'impressions': 200, 
 
 
 class FetchTests(unittest.TestCase):
+    def test_csv_guard_blocks_numeric_prefix_and_whitespace_bypasses(self):
+        for text in ('+1+HYPERLINK("x")', '-1+WEBSERVICE("x")', ' =SUM(A1)', '- HYPERLINK("x")'):
+            self.assertEqual(fetch_google.neutralize(text), "'"+text)
+        for text in ('-20 % Rabatt', '+43 1 234', 'Normaler Text', '-.5'):
+            self.assertEqual(fetch_google.neutralize(text), text)
+
     def run_fetch(self, argv, response):
         calls = []
 
@@ -58,6 +64,14 @@ class FetchTests(unittest.TestCase):
         manifest = json.loads(next(out.glob('*.manifest.json')).read_text())
         self.assertEqual(manifest['time_zone'], 'America/Los_Angeles')
 
+    def test_only_google_token_variables_can_be_sent(self):
+        # Any other variable (e.g. a mail password) must never leave the machine as a Bearer token.
+        with mock.patch.dict('os.environ', {'MAIL_ONE_PASSWORD': 'fictional-secret'}, clear=True), self.assertRaises(SystemExit):
+            fetch_google.main(['ga4', '--property', '1', '--out-dir', '.', '--time-zone', 'Europe/Vienna', '--token-env', 'MAIL_ONE_PASSWORD'])
+        self.assertTrue(fetch_google.valid_token_env('GOOGLE_OAUTH_ACCESS_TOKEN'))
+        for name in ('MAIL_ONE_PASSWORD', 'SITE_KEY_FILE', 'GOOGLE_', 'google_x', ''):
+            self.assertFalse(fetch_google.valid_token_env(name), name)
+
     def test_missing_token_is_refused(self):
         with mock.patch.dict('os.environ', {}, clear=True), self.assertRaises(SystemExit):
             fetch_google.main(['ga4', '--property', '1', '--out-dir', '.'])
@@ -93,9 +107,11 @@ class FetchRegressionTests(unittest.TestCase):
         self.assertEqual(starts, [0, 25000])
         self.assertEqual(len(rows), 25000)
         with tempfile.TemporaryDirectory() as temp, mock.patch.dict('os.environ', {'GOOGLE_OAUTH_ACCESS_TOKEN': 'secret'}):
-            response = {'rows': [dict(GSC_PAGE['rows'][0], keys=['2026-10-01', 'fictional query'])]}
+            response = {'rows': [dict(GSC_PAGE['rows'][0], keys=['2026-10-01', '=HYPERLINK("https://evil.example","x")'])]}
             code = fetch_google.main(['gsc', '--site', 'sc-domain:example.org', '--dimension', 'query', '--out-dir', temp], post=lambda *a: response, today=date(2026, 10, 27))
             self.assertEqual(code, 0)
+            # Outsiders can seed search queries; they must arrive as text, not as a formula.
+            self.assertIn(',"\'=HYPERLINK(', next(Path(temp).glob('*.csv')).read_text())
             self.assertEqual(json.loads(next(Path(temp).glob('*.manifest.json')).read_text())['privacy_class'], 'confidential')
 
     def test_timezone_overrides_cannot_mislabel_source_and_errors_redact_tokens(self):
