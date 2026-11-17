@@ -1,0 +1,12 @@
+{
+  "executor_uid": 991,
+  "agent_uid": 992,
+  "code_root": "/opt/agentic-marketing-suite",
+  "approval_key_file": "/srv/ams-executor/approval.key",
+  "approvals": [
+    {
+      "path": "/srv/ams-executor/approvals.jsonl",
+      "capabilities": ["mail.send", "mail.save_draft", "website.sftp"]
+    }
+  ]
+}
