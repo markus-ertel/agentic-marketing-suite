@@ -16,7 +16,9 @@ import json
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / '.suite/capabilities'))
 from runtime import (CapabilityError, CheckError, clean_string, digest, load_json, relative_file,
-                     require_approval, run_once, snapshot_json, write_json)
+                     bound_execution_log, require_approval, run_once, snapshot_json, write_json)
+from private_files import is_private
+from execution_authority import require_execution_authority
 
 PRIVATE = {'.git', '.aws', '.ssh', '.codex', '.nocrm', '.nocms', 'node_modules', '__pycache__'}
 
@@ -30,8 +32,7 @@ def safe_path(value, absolute=False):
         raise CapabilityError('Unsafe path')
     for part in path.parts:
         folded = part.casefold()
-        if (folded in PRIVATE or folded.startswith('.env') or (folded.startswith('.') and folded != '.htaccess')
-                or PurePosixPath(part).suffix.lower() in ('.key', '.pem', '.p12', '.pfx')):
+        if (folded in PRIVATE or is_private(part, export=True) or (folded.startswith('.') and folded != '.htaccess')):
             raise CapabilityError('Private files must not be deployed')
     return path
 
@@ -218,9 +219,12 @@ def main():
             value, loaded_hash = snapshot_json(args.plan)
             if value != plan(args.root, value['deployment']):
                 raise CapabilityError('Plan changed')
-            gate = lambda: require_approval(args.approvals, args.request_id, args.root, args.plan, 'publish', value['target'], loaded_hash)
+            def gate():
+                authority = require_execution_authority(args.approvals, args.execution_log, 'website.sftp')
+                return require_approval(args.approvals, args.request_id, args.root, args.plan, 'publish', value['target'], loaded_hash,
+                                        key_path=authority['approval_key_file'])
             approval = gate()
-            result = run_once(args.execution_log, args.key, 'website.sftp', approval, lambda: transfer(value, args.root, revalidate=gate))
+            result = run_once(bound_execution_log(args.approvals, args.execution_log), args.key, 'website.sftp', approval, lambda: transfer(value, args.root, revalidate=gate))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result['status'] in ('archived', 'planned', 'confirmed') else 2
     except (CapabilityError, CheckError, OSError, ValueError, KeyError, TypeError, RuntimeError, zipfile.BadZipFile):

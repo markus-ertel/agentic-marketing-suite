@@ -1,5 +1,7 @@
 # SFTP-Publishing · Capability v0.1
 
+**Live-Ausführung:** Die [getrennte Ausführung](../../../../.suite/EXECUTOR.md) administrativ einrichten. `execute` als separates Ausführungskonto aus der geschützten Installation mit isoliertem Python (`python3 -I`) starten. Ohne Policy bleibt die Aktion gesperrt.
+
 ## Zweck und Voraussetzungen
 
 Ein geprüftes Website-Dateiset über das vorhandene OpenSSH-CLI `sftp` übertragen. Python 3.9+, OpenSSH, ein vorbereitetes Zielverzeichnis, vorab unabhängig verifizierte Host-Keys und passende SSH-Kontorechte sind erforderlich. Standardverfahren ist ausschließlich SFTP; weder FTP/FTPS noch Remote-Löschung oder automatischer Host-Key-Trust sind implementiert.
