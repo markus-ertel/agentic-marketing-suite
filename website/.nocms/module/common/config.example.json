@@ -3,6 +3,7 @@
   "privacy_url": "/datenschutz.html",
   "data_dir": "/srv/private/webmodules",
   "retention_days": 30,
+  "trusted_proxies": [],
   "contact": {
     "enabled": false,
     "authorization": {

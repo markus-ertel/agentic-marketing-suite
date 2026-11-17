@@ -13,7 +13,7 @@ try {
         if (is_link($path)) throw new RuntimeException('Invalid store');
         $records = is_file($path) ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR) : [];
         $out = fopen('php://stdout', 'wb'); fputcsv($out, ['id','email','consent_version','confirmed_at','unsubscribe_url']);
-        foreach ($records as $id => $entry) if (($entry['state'] ?? '') === 'confirmed') fputcsv($out, [$id,$entry['email'],$entry['consent_version'],$entry['confirmed_at'],$cfg['origin'] . ($cfg['newsletter']['endpoint_path'] ?? '/api/newsletter.php') . '?unsubscribe=' . nl_manage_token($id)]);
+        foreach ($records as $id => $entry) if (($entry['state'] ?? '') === 'confirmed') fputcsv($out, array_map('wm_csv_cell', [$id,$entry['email'],$entry['consent_version'],$entry['confirmed_at'],$cfg['origin'] . ($cfg['newsletter']['endpoint_path'] ?? '/api/newsletter.php') . '?unsubscribe=' . nl_manage_token($id)]));
         exit;
     }
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'GET') {
@@ -37,7 +37,7 @@ try {
         if (($_POST['consent'] ?? '') !== 'yes') wm_fail(422, 'Bitte die Einwilligung bestätigen.');
         $text = $cfg['newsletter']['consent_text'] ?? ''; $version = $cfg['newsletter']['consent_version'] ?? '';
         if (!is_string($text) || trim($text) === '' || !is_string($version) || trim($version) === '') throw new RuntimeException('Versioned consent required');
-        wm_rate($cfg, $nonce); $token = bin2hex(random_bytes(32)); $id = bin2hex(random_bytes(16));
+        wm_rate($cfg, $nonce, 'newsletter-signup'); $token = bin2hex(random_bytes(32)); $id = bin2hex(random_bytes(16));
         $created = wm_store($cfg, 'newsletter', function(array &$state) use ($email,$token,$id,$text,$version): bool {
             $now = time();
             foreach ($state as $key => $entry) {
@@ -53,7 +53,7 @@ try {
         }
         wm_fail(202, 'Falls diese Adresse neu angemeldet werden kann, wurde die Bestätigungsanfrage entgegengenommen. Ohne ausdrückliche Bestätigung erfolgt keine Anmeldung.');
     }
-    $token = wm_field('token', 120); if ($action !== 'unsubscribe') wm_rate($cfg, $nonce);
+    $token = wm_field('token', 120); if ($action !== 'unsubscribe') wm_rate($cfg, $nonce, 'newsletter-' . $action);
     $result = wm_store($cfg, 'newsletter', function(array &$state) use ($action,$token): array {
         if ($action === 'confirm') {
             foreach ($state as $id => &$entry) {

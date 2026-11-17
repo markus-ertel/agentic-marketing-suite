@@ -9,7 +9,7 @@ try {
         if (is_link($path)) throw new RuntimeException('Invalid analytics file');
         $state = is_file($path) ? json_decode(file_get_contents($path), true, 32, JSON_THROW_ON_ERROR) : [];
         $out = fopen('php://stdout', 'wb'); fputcsv($out, ['date','page','pageviews']);
-        foreach ($state as $day => $pages) foreach ($pages as $page => $count) fputcsv($out, [$day,$page,$count]);
+        foreach ($state as $day => $pages) foreach ($pages as $page => $count) fputcsv($out, [$day, wm_csv_cell((string)$page), $count]);
         exit;
     }
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') wm_fail(405, 'Nur POST erlaubt.');
@@ -22,6 +22,10 @@ try {
     if (!is_array($pages) || count($pages) > 1000 || !in_array($input['page'], $pages, true) || !preg_match('#^/(?!/)[A-Za-z0-9/._~%-]*$#D', $input['page']) || str_contains($input['page'], '..')) wm_fail(422, 'Unbekannte Seite.');
     $retention = $cfg['analytics']['retention_days'] ?? 30;
     if (!is_int($retention) || $retention < 1 || $retention > 365) throw new RuntimeException('Invalid retention');
+    // Optional (L4): a per-visitor daily cap needs a short-lived pseudonym; off by default to store nothing per visitor.
+    $perClient = $cfg['analytics']['max_hits_per_client_day'] ?? null;
+    if ($perClient !== null && (!is_int($perClient) || $perClient < 1 || $perClient > 10000)) throw new RuntimeException('Invalid client limit');
+    if ($perClient !== null && !wm_analytics_allowed($cfg, $perClient)) { header('Cache-Control: no-store'); http_response_code(204); exit; }
     $today = gmdate('Y-m-d'); $cutoff = gmdate('Y-m-d', time() - ($retention - 1) * 86400); $page = $input['page'];
     wm_store($cfg, 'analytics', function(array &$state) use ($today,$cutoff,$page): void {
         $state = array_filter($state, fn($day) => $day >= $cutoff && $day <= $today, ARRAY_FILTER_USE_KEY);

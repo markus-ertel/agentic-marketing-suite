@@ -11,7 +11,7 @@ try {
     if (array_diff(array_keys($_POST), ['csrf','website','name','email','message'])) wm_fail(422, 'Unbekannte Formularfelder.');
     $name = wm_field('name', 100); $email = wm_email(wm_field('email', 254)); $message = wm_field('message', 10000);
     if (preg_match('/[\r\n]/', $name)) wm_fail(422, 'Bitte einen gültigen Namen eingeben.');
-    wm_rate($cfg, $nonce);
+    wm_rate($cfg, $nonce, 'contact');
     wm_deliver($cfg, 'contact', (string)($cfg['contact']['to'] ?? ''), $email, 'Website-Anfrage', "Name: $name\nE-Mail: $email\n\n$message");
     wm_fail(202, 'Ihre Anfrage wurde entgegengenommen.');
 } catch (Throwable $error) { wm_fail(503, 'Die Anfrage konnte nicht bestätigt werden. Bitte nicht mehrfach absenden und bei Bedarf einen anderen Kontaktweg nutzen.'); }

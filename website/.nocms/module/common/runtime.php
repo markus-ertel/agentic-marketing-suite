@@ -22,7 +22,24 @@ function wm_config(): array {
     if (!$url || (isset($url['user']) || isset($url['pass'])) || isset($url['query']) || isset($url['fragment']) || !empty($url['path']) || !isset($url['host'])) throw new RuntimeException('Invalid origin');
     if (($url['scheme'] ?? '') !== 'https' && !(($url['scheme'] ?? '') === 'http' && in_array($url['host'], ['localhost','127.0.0.1','[::1]'], true))) throw new RuntimeException('HTTPS required');
     if (!is_string($cfg['privacy_url'] ?? null) || !str_starts_with($cfg['privacy_url'], '/') || str_starts_with($cfg['privacy_url'], '//') || preg_match('/[\\\\\x00-\x20]/', $cfg['privacy_url'])) throw new RuntimeException('Privacy URL required');
+    $proxies = $cfg['trusted_proxies'] ?? [];
+    if (!is_array($proxies) || count($proxies) > 50) throw new RuntimeException('Invalid trusted_proxies');
+    foreach ($proxies as $proxy) if (!is_string($proxy) || filter_var($proxy, FILTER_VALIDATE_IP) === false) throw new RuntimeException('Invalid trusted_proxies');
     $cfg['_data'] = $data; return $cfg;
+}
+/* Real visitor address. Behind a reverse proxy/CDN every request comes from the proxy; only then, and only for
+   configured proxy addresses, the rightmost untrusted X-Forwarded-For entry is the visitor (L10). */
+function wm_client_ip(array $cfg): string {
+    $remote = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $proxies = $cfg['trusted_proxies'] ?? [];
+    if (!in_array($remote, $proxies, true)) return $remote;
+    $chain = array_map('trim', explode(',', (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')));
+    for ($i = count($chain) - 1; $i >= 0; $i--) {
+        $candidate = $chain[$i];
+        if (filter_var($candidate, FILTER_VALIDATE_IP) === false) return $remote;
+        if (!in_array($candidate, $proxies, true)) return $candidate;
+    }
+    return $remote;
 }
 function wm_secret(): string {
     $secret = (string)getenv('WEBMODULE_SECRET');
@@ -33,15 +50,15 @@ function wm_escape(string $value): string { return htmlspecialchars($value, ENT_
 function wm_origin(array $cfg): void {
     if (($_SERVER['HTTP_ORIGIN'] ?? '') !== $cfg['origin']) wm_fail(403, 'Anfrage von dieser Herkunft nicht erlaubt.');
 }
-function wm_token(string $purpose): string {
+function wm_token(array $cfg, string $purpose): string {
     $payload = time() . '.' . bin2hex(random_bytes(16));
-    $binding = $purpose . '|' . $payload . '|' . ($_SERVER['REMOTE_ADDR'] ?? '');
+    $binding = $purpose . '|' . $payload . '|' . wm_client_ip($cfg);
     return $payload . '.' . hash_hmac('sha256', $binding, wm_secret());
 }
-function wm_verify_token(string $purpose, mixed $token): string {
+function wm_verify_token(array $cfg, string $purpose, mixed $token): string {
     if (!is_string($token) || !preg_match('/^([0-9]{10})\.([a-f0-9]{32})\.([a-f0-9]{64})$/D', $token, $parts)) wm_fail(403, 'Formular bitte erneut öffnen.');
     $age = time() - (int)$parts[1];
-    $binding = $purpose . '|' . $parts[1] . '.' . $parts[2] . '|' . ($_SERVER['REMOTE_ADDR'] ?? '');
+    $binding = $purpose . '|' . $parts[1] . '.' . $parts[2] . '|' . wm_client_ip($cfg);
     if ($age < 0 || $age > 900 || !hash_equals(hash_hmac('sha256', $binding, wm_secret()), $parts[3])) wm_fail(403, 'Formular bitte erneut öffnen.');
     return hash('sha256', $token);
 }
@@ -66,14 +83,17 @@ function wm_store(array $cfg, string $name, callable $change): mixed {
         return $result;
     } finally { if ($temporary && is_file($temporary)) unlink($temporary); flock($lock, LOCK_UN); fclose($lock); }
 }
-function wm_rate(array $cfg, string $nonce): void {
-    $accepted = wm_store($cfg, 'rate', function(array &$state) use ($nonce): bool {
+function wm_rate(array $cfg, string $nonce, string $purpose): void {
+    $ip = wm_client_ip($cfg);
+    // Separate quotas per form (L4): newsletter traffic cannot exhaust the contact form and vice versa.
+    $form = preg_replace('/[^a-z-]/', '', $purpose);
+    $accepted = wm_store($cfg, 'rate', function(array &$state) use ($nonce, $ip, $form): bool {
         $now = time();
         $state = array_filter($state, fn($entry) => is_array($entry) && ($entry['expires'] ?? 0) > $now);
         $seen = 'nonce-' . $nonce;
         if (isset($state[$seen])) return false;
-        $client = hash_hmac('sha256', date('Y-m-d') . '|' . ($_SERVER['REMOTE_ADDR'] ?? ''), wm_secret());
-        $limits = ['minute-' . $client . '-' . intdiv($now,60) => [60,3], 'hour-' . $client . '-' . intdiv($now,3600) => [3600,10], 'global-' . intdiv($now,3600) => [3600,100]];
+        $client = hash_hmac('sha256', date('Y-m-d') . '|' . $ip, wm_secret());
+        $limits = ['minute-' . $form . '-' . $client . '-' . intdiv($now,60) => [60,3], 'hour-' . $form . '-' . $client . '-' . intdiv($now,3600) => [3600,10], 'global-' . $form . '-' . intdiv($now,3600) => [3600,100]];
         foreach ($limits as $key => [$window,$limit]) if (($state[$key]['count'] ?? 0) >= $limit) return false;
         foreach ($limits as $key => [$window,$limit]) $state[$key] = ['count' => ($state[$key]['count'] ?? 0) + 1, 'expires' => $now + $window];
         $state[$seen] = ['count' => 1, 'expires' => $now + 900]; return true;
@@ -86,7 +106,7 @@ function wm_post(array $cfg, string $purpose): string {
     $length = filter_var($_SERVER['CONTENT_LENGTH'] ?? '', FILTER_VALIDATE_INT);
     if ($length === false || $length <= 0 || $length > 16384) wm_fail(413, 'Nachricht ist zu groß.');
     if (!is_string($_POST['website'] ?? '') || ($_POST['website'] ?? '') !== '') wm_fail(400, 'Formular konnte nicht verarbeitet werden.');
-    return wm_verify_token($purpose, $_POST['csrf'] ?? null);
+    return wm_verify_token($cfg, $purpose, $_POST['csrf'] ?? null);
 }
 function wm_field(string $name, int $max): string {
     $value = $_POST[$name] ?? '';
@@ -144,5 +164,22 @@ function wm_form(array $cfg, string $purpose, string $heading, string $fields): 
     header('Content-Type: text/html; charset=utf-8'); header('Cache-Control: no-store');
     header("Content-Security-Policy: default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'self'");
     header('X-Content-Type-Options: nosniff'); header('Referrer-Policy: no-referrer');
-    echo '<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . wm_escape($heading) . '</title><main><h1>' . wm_escape($heading) . '</h1><form method="post"><input type="hidden" name="csrf" value="' . wm_escape(wm_token($purpose)) . '">' . $fields . '<div hidden aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div><p><a href="' . wm_escape($cfg['privacy_url']) . '">Datenschutzhinweise</a></p><button type="submit">Bestätigen</button></form></main></html>';
+    echo '<!doctype html><html lang="de"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' . wm_escape($heading) . '</title><main><h1>' . wm_escape($heading) . '</h1><form method="post"><input type="hidden" name="csrf" value="' . wm_escape(wm_token($cfg, $purpose)) . '">' . $fields . '<div hidden aria-hidden="true"><label>Website <input name="website" tabindex="-1" autocomplete="off"></label></div><p><a href="' . wm_escape($cfg['privacy_url']) . '">Datenschutzhinweise</a></p><button type="submit">Bestätigen</button></form></main></html>';
+}
+
+/* Analytics hits per visitor and day (L4): a single client cannot inflate counts beyond this. */
+function wm_analytics_allowed(array $cfg, int $limit): bool {
+    $ip = wm_client_ip($cfg);
+    return wm_store($cfg, 'rate', function(array &$state) use ($ip, $limit): bool {
+        $now = time();
+        $state = array_filter($state, fn($entry) => is_array($entry) && ($entry['expires'] ?? 0) > $now);
+        $key = 'analytics-' . hash_hmac('sha256', gmdate('Y-m-d') . '|' . $ip, wm_secret());
+        if (($state[$key]['count'] ?? 0) >= $limit) return false;
+        $state[$key] = ['count' => ($state[$key]['count'] ?? 0) + 1, 'expires' => $now + 86400]; return true;
+    });
+}
+/* CSV exports are opened in spreadsheets; never let stored text run as a formula (L2). */
+function wm_csv_cell(mixed $value): mixed {
+    if (is_string($value) && $value !== '' && (str_contains("=@\t\r", $value[0]) || (($value[0] === '+' || $value[0] === '-') && strlen($value) > 1 && !ctype_digit($value[1]) && !str_contains(' .,', $value[1])))) return "'" . $value;
+    return $value;
 }
