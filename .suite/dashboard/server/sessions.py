@@ -147,6 +147,8 @@ class Sessions:
             raise ValueError('Die Rückfrage ist nicht mehr offen.')
         if not isinstance(response, dict):
             raise ValueError('Antwort muss ein JSON-Objekt sein.')
+        if 'decisions' in request and response.get('decision') not in request['decisions']:
+            raise ValueError('Diese Entscheidung ist für die vorliegende Anfrage nicht zulässig.')
         session.adapter.respond(request.get('rpc_id', request_id), response)
         return {'accepted': True}
 

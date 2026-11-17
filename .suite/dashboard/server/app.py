@@ -1,19 +1,33 @@
 """Local HTTP/SSE server. Run: python3 .suite/dashboard/server/app.py."""
 import argparse
+import hmac
 import json
 import mimetypes
 import re
+import secrets
 import sys
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit, unquote
+from urllib.parse import parse_qs, parse_qsl, urlencode, urlsplit, unquote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server.files import Files
 from server.approvals import ApprovalView, configure_approvals
 
 DASHBOARD = Path(__file__).resolve().parents[1]
+LOOPBACK = {'127.0.0.1', 'localhost'}
+COOKIE = 'ams_dashboard'
+# Dashboard pages: no framing (clickjacking on permission buttons) and no remote images (tracking beacons).
+PAGE_CSP = ("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "media-src 'self'; frame-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; "
+            "form-action 'self'; frame-ancestors 'none'")
+
+
+def local_host(host):
+    if host not in LOOPBACK:
+        raise ValueError('Dashboard darf nur an 127.0.0.1 oder localhost gebunden werden.')
+    return host
 
 
 def load_config(path):
@@ -31,6 +45,9 @@ def load_config(path):
     server.setdefault('host', '127.0.0.1')
     if not isinstance(server['host'], str) or not server['host']:
         raise ValueError('server.host muss ein Hostname oder eine IP-Adresse sein.')
+    if not isinstance(server.setdefault('allow_non_loopback', False), bool):
+        raise ValueError('server.allow_non_loopback muss true oder false sein.')
+    local_host(server['host'])
     suite = config.setdefault('suite', {})
     if not isinstance(suite.get('root', '../..'), str):
         raise ValueError('suite.root muss ein Verzeichnispfad sein.')
@@ -68,11 +85,16 @@ class DashboardServer(ThreadingHTTPServer):
     allow_reuse_address = True
 
     def __init__(self, config):
+        local_host(config['server']['host'])
         self.config = config
         self.files = Files(config['suite']['root'], config['viewer']['max_inline_file_mb'],
                            show_internal_files=config['suite'].get('show_internal_files', False))
         self.approvals = ApprovalView(config.get('approvals', {}).get('logs', []))
         self.sessions = None
+        # Fresh secret per start: only someone who sees the printed URL can use the API.
+        self.token = secrets.token_urlsafe(32)
+        # Sandboxed previews send no cookies, so their relative resources carry this read-only token in the path.
+        self.preview_token = secrets.token_urlsafe(32)
         super().__init__((config['server']['host'], config['server']['port']), Handler)
 
     def server_close(self):
@@ -103,7 +125,56 @@ class Handler(BaseHTTPRequestHandler):
                 self.close_connection = True
                 self.reply({'error': 'Nicht erlaubter oder fehlender Origin.'}, 403)
                 return False
-        return True
+        return self.authenticate()
+
+    def presented_token(self):
+        authorization = self.headers.get_all('Authorization', [])
+        if len(authorization) == 1 and authorization[0].startswith('Bearer '):
+            return authorization[0][7:]
+        header = self.headers.get('X-Dashboard-Token')
+        if header:
+            return header
+        for part in self.headers.get('Cookie', '').split(';'):
+            name, _, value = part.strip().partition('=')
+            if name == COOKIE:
+                return value
+        return ''
+
+    def preview_path(self, path):
+        prefix = '/preview/'
+        if not path.startswith(prefix):
+            return None
+        offered, _, relative = path[len(prefix):].partition('/')
+        if not hmac.compare_digest(offered.encode(), self.server.preview_token.encode()):
+            return None
+        return unquote(relative)
+
+    def authenticate(self):
+        token = self.server.token
+        if hmac.compare_digest(self.presented_token().encode(), token.encode()):
+            return True
+        url = urlsplit(self.path)
+        if self.command == 'GET' and self.preview_path(url.path) is not None:
+            return True
+        offered = parse_qs(url.query).get('token', [''])[0]
+        if self.command == 'GET' and url.path == '/' and offered and hmac.compare_digest(offered.encode(), token.encode()):
+            # Move the secret from the URL into an HttpOnly cookie and drop it from the address bar.
+            self.send_response(303)
+            self.send_header('Set-Cookie', f'{COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/')
+            rest = urlencode([(key, value) for key, value in parse_qsl(url.query, keep_blank_values=True) if key != 'token'])
+            self.send_header('Location', '/' + ('?' + rest if rest else ''))
+            self.send_header('Content-Length', '0')
+            self.send_header('Cache-Control', 'no-store')
+            self.end_headers()
+            return False
+        # Only static shell assets are public; no project content is embedded in them.
+        if self.command == 'GET' and url.path in ('/', '/app.js', '/styles.css') and not offered:
+            return True
+        if self.command == 'POST' and url.path == '/api/auth':
+            return True
+        self.close_connection = True
+        self.reply({'error': 'Nicht angemeldet. Öffne die beim Start im Terminal angezeigte Adresse.'}, 401)
+        return False
 
     def log_message(self, fmt, *args):
         # Do not log prompts, query paths, or file contents.
@@ -117,6 +188,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('X-Frame-Options', 'DENY')
+        self.send_header('Referrer-Policy', 'no-referrer')
+        self.send_header('Content-Security-Policy', PAGE_CSP)
         self.end_headers()
         self.wfile.write(data)
 
@@ -142,7 +216,8 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == '/api/config':
             config = self.server.config
             return self.reply({'suite': {k: v for k, v in config['suite'].items() if k != 'root'},
-                               'viewer': config['viewer'], 'default_profile': config.get('agents', {}).get('default_profile')})
+                               'viewer': config['viewer'], 'preview_base': '/preview/' + self.server.preview_token + '/',
+                               'default_profile': config.get('agents', {}).get('default_profile')})
         if url.path == '/api/approvals':
             return self.reply(self.server.approvals.snapshot())
         if url.path == '/api/modules':
@@ -153,6 +228,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(files.metadata(arg('path')) if arg('meta') == 'true' else files.preview(arg('path')))
         if url.path == '/api/raw':
             return self.raw(arg('path'), arg('download') == 'true')
+        preview = self.preview_path(url.path)
+        if preview is not None:
+            return self.raw(preview)
         if url.path.startswith('/view/'):
             return self.raw(unquote(url.path[len('/view/'):]))
         if url.path == '/api/agents':
@@ -195,7 +273,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Accept-Ranges', 'bytes')
             self.send_header('Cache-Control', 'no-store')
             self.send_header('X-Content-Type-Options', 'nosniff')
-            self.send_header('Content-Security-Policy', "sandbox; default-src 'none'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; media-src 'self'; font-src 'self'")
+            # Preview URLs carry a token; never pass them to external hosts.
+            self.send_header('Referrer-Policy', 'no-referrer')
+            self.send_header('X-Frame-Options', 'SAMEORIGIN')
+            self.send_header('Content-Security-Policy', "sandbox; default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; media-src 'self'; font-src 'self'; frame-ancestors 'self'")
             if download:
                 from urllib.parse import quote
                 self.send_header('Content-Disposition', "attachment; filename*=UTF-8''" + quote(meta['name']))
@@ -219,6 +300,21 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError('Leere oder zu große Nachricht.')
             payload = json.loads(self.rfile.read(length))
             route = urlsplit(self.path).path
+            if route == '/api/auth':
+                token = payload.get('token') if isinstance(payload, dict) else None
+                if not isinstance(token, str) or not hmac.compare_digest(token.encode(), self.server.token.encode()):
+                    return self.reply({'error': 'Ungültiger Startlink.'}, 401)
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', '2')
+                self.send_header('Cache-Control', 'no-store')
+                self.send_header('Set-Cookie', f'{COOKIE}={self.server.token}; HttpOnly; SameSite=Strict; Path=/')
+                self.send_header('Referrer-Policy', 'no-referrer')
+                self.send_header('X-Frame-Options', 'DENY')
+                self.send_header('Content-Security-Policy', PAGE_CSP)
+                self.end_headers()
+                self.wfile.write(b'{}')
+                return
             if route == '/api/approvals' or route.startswith('/api/approvals/'):
                 return self.reply({'error': 'Freigaben werden hier nur angezeigt.'}, 405)
             manager = self.server.sessions
@@ -272,7 +368,9 @@ def main():
             from server.sessions import Sessions
             server.sessions = Sessions(config.get('agents', {}), server.files)
             host, port = server.server_address[:2]
-            print(f'Dashboard: http://{host}:{port}  (Stoppen: Strg+C)', flush=True)
+            shown = f'[{host}]' if ':' in host else host
+            print(f'Dashboard: http://{shown}:{port}/#token={server.token}  (Stoppen: Strg+C)', flush=True)
+            print('Die Adresse enthält ein Zugangstoken für diesen Start. Nicht weitergeben.', flush=True)
             server.serve_forever(poll_interval=0.3)
     except KeyboardInterrupt:
         pass
