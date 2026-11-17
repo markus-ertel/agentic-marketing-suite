@@ -19,6 +19,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'capabilities'))
 from runtime import CapabilityError, relative_file, require_approval, summarize, write_new
+from csv_safety import formula_like
 
 ROOT = Path(__file__).resolve().parents[2]
 # The human decision an import prepares; a paused Ads campaign still becomes spend once enabled.
@@ -54,6 +55,11 @@ def check_google_ads(manifest):
         if start > end: raise ValueError('invalid dates')
     except (TypeError, KeyError, ValueError, InvalidOperation):
         errors.append('Gültige positive Tages-/Gesamtbudgets und Laufzeit erforderlich')
+    else:
+        # The file carries only a daily budget; the approved total must cover every day of the run.
+        implied = daily * ((end - start).days + 1)
+        if implied > lifetime:
+            errors.append('Tagesbudget × Laufzeit (%s) übersteigt das freigegebene Gesamtbudget (%s)' % (implied, lifetime))
     if manifest.get('platform') != 'google-ads':
         errors.append("platform muss 'google-ads' sein")
     ads = manifest.get('search_ads')
@@ -213,6 +219,12 @@ def export(kind, source, out, root=ROOT, log=None, request_id=None, target=None,
     data = source.read_bytes()
     record = json.loads(data.decode('utf-8'))
     errors = check_social(record, scheduler_time_zone) if kind == 'social-csv' else CHECKS[kind](record)
+    if not errors and kind != 'email-html':
+        # Import files are often opened in a spreadsheet first; approved text must not run as a formula.
+        columns, rows = (rows_google_ads(record) if kind == 'google-ads' else rows_social(record, scheduler_time_zone))
+        risky = sorted({column for row in rows for column, value in row.items() if formula_like(value)})
+        if risky:
+            errors.append('Zellen beginnen wie eine Tabellenformel (=, @, +Text, -Text): ' + ', '.join(risky))
     if errors:
         raise CapabilityError('; '.join(errors))
     if check_only:

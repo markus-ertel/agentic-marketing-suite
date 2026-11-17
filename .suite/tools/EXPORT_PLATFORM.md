@@ -12,7 +12,7 @@ Für Ausgabe `--out`, `--log`, `--request-id` und `--target` angeben. Die aktuel
 
 ## Google Ads Editor
 
-Das optionale `search_ads`-Objekt im Advertising-Manifest enthält Kampagnenname, Gruppen, HTTPS-Ziel, 3–15 Headlines (max. 30), 2–4 Descriptions (max. 90), Pfade (max. 15) und Keywords mit Match-Typ. CSV enthält Kampagne **Paused**, Tagesbudget sowie Start-/Enddatum. Gesamtbudget und Währung dürfen die menschliche Freigabe nicht überschreiten.
+Das optionale `search_ads`-Objekt im Advertising-Manifest enthält Kampagnenname, Gruppen, HTTPS-Ziel, 3–15 Headlines (max. 30), 2–4 Descriptions (max. 90), Pfade (max. 15) und Keywords mit Match-Typ. CSV enthält Kampagne **Paused**, Tagesbudget sowie Start-/Enddatum. Gesamtbudget und Währung dürfen die menschliche Freigabe nicht überschreiten. Weil die Datei nur das Tagesbudget überträgt, wird der Export blockiert, wenn Tagesbudget × Laufzeittage das freigegebene Gesamtbudget übersteigt.
 
 Das Lifetime-Limit ist **kein technisch durch diese CSV erzwungenes Plattformlimit**. Google Ads verwendet ein durchschnittliches Tagesbudget; vor Aktivierung Kontowährung, Laufzeit, tatsächliche Ausgabengrenzen, Sprache, Region, Gebotsstrategie und weitere Kontoeinstellungen prüfen. Neue Kampagnen können Editor-Defaults übernehmen. Importvorschau kontrollieren und fehlende Einstellungen bewusst ergänzen; eine manuelle Aktivierung ist eine eigene Ausführung, die aktuelle Autorisierung erfordert. Kein Live-Testimport wurde durchgeführt.
 

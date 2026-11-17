@@ -94,7 +94,9 @@ def check(name, record):
         if r['lead_module'] in r.get('supporting_modules',[]):errors.append('supporting_modules must not repeat lead_module')
     if name=='artifact':
         p=r['path']
-        if p.startswith('/') or '\\' in p or '..' in p.split('/') or '://' in p or not p.strip():errors.append('path: unsafe/non-relative')
+        # No home expansion, control characters or drive letters: paths stay plain suite-relative strings.
+        if (p.startswith(('/','~')) or '\\' in p or '..' in p.split('/') or '://' in p or not p.strip()
+                or any(ord(c)<32 or ord(c)==127 for c in p) or re.match(r'[A-Za-z]:',p)):errors.append('path: unsafe/non-relative')
         if r['status'] in ('approved','published'):
             if 'sha256' not in r:errors.append(r['status']+' artifact needs sha256')
             if r['rights_status']=='pending':errors.append(r['status']+' artifact with pending rights')
