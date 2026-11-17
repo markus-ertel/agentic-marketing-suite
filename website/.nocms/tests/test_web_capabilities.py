@@ -19,6 +19,9 @@ sftp=load('publisher','website/.nocms/integrationen/sftp/publisher.py')
 
 class WebCapabilityTests(unittest.TestCase):
     def setUp(self):
+        sys.path.insert(0,str(ROOT/'.suite/tests'))
+        from approval_key import use_test_key
+        use_test_key(self)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.site=self.root/'site';self.site.mkdir();(self.site/'index.html').write_text('<title>Start</title><h1>Grüße</h1><script>SECRET_SCRIPT</script>')
         self.config=dict(type='sftp',source='site',target='/public_html',host='example.invalid',port=22,username='web',credential_ref='WEB',delete_remote=False,verify_upload=True,release_archive='release.zip')
@@ -53,9 +56,11 @@ class WebCapabilityTests(unittest.TestCase):
         for field,changed in [('host','-oProxyCommand=evil'),('target','/public\nrm /'),('source','../outside'),('delete_remote',True),('verify_upload',False)]:
             with self.subTest(field=field),self.assertRaises((sftp.CapabilityError,ValueError)):
                 sftp.plan(self.root,dict(self.config,**{field:changed}))
-        secret=self.site/'.env';secret.write_text('secret')
-        with self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
-        secret.unlink();(self.site/'alias').symlink_to(self.site/'index.html')
+        for name in ('.env','credentials.json','secrets.json','token.json','id_rsa','dump.sql','backup.sqlite','service-account.json'):
+            secret=self.site/name;secret.write_text('secret')
+            with self.subTest(name=name),self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
+            secret.unlink()
+        (self.site/'alias').symlink_to(self.site/'index.html')
         with self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
     def test_sftp_checks_host_keys_stages_and_verifies_exact_remote_bytes(self):
         value=sftp.plan(self.root,self.config);remote={};commands=[]
@@ -131,7 +136,7 @@ class WebCapabilityTests(unittest.TestCase):
         original=sftp.transfer
         def transport(value,root,revalidate):return original(value,root,runner=runner,revalidate=revalidate)
         arguments=['publisher.py','--root',str(self.root),'execute','--plan',str(plan),'--approvals',str(log),'--request-id',request['id'],'--execution-log',str(self.root/'executions.jsonl'),'--key','cli-once','--harness-authorized']
-        with patch.dict(os.environ,{'WEB_KEY_FILE':str(key),'WEB_KNOWN_HOSTS_FILE':str(known)}),patch.object(sftp,'transfer',side_effect=transport),patch.object(sftp.shutil,'which',return_value='/usr/bin/sftp'),patch.object(sys,'argv',arguments):
+        with patch.object(sftp,'require_execution_authority',return_value={'approval_key_file':os.environ['SUITE_APPROVAL_KEY_FILE']}),patch.dict(os.environ,{'WEB_KEY_FILE':str(key),'WEB_KNOWN_HOSTS_FILE':str(known)}),patch.object(sftp,'transfer',side_effect=transport),patch.object(sftp.shutil,'which',return_value='/usr/bin/sftp'),patch.object(sys,'argv',arguments):
             for attempt in range(2):
                 output=io.StringIO()
                 with contextlib.redirect_stdout(output):self.assertEqual(sftp.main(),0)

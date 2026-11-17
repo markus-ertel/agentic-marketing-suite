@@ -24,6 +24,17 @@ if os.environ.get('REQUIRE_PHP_TESTS')=='1' and not PHP:raise RuntimeError('PHP 
 spec=importlib.util.spec_from_file_location('php_webmodules',ROOT/'website/.nocms/tools/webmodules.py');web=importlib.util.module_from_spec(spec);spec.loader.exec_module(web)
 
 
+@unittest.skipUnless(PHP,'PHP runtime not installed; mandatory PHP coverage runs in CI')
+class PHPCLISafetyTests(unittest.TestCase):
+    def test_csv_guard_blocks_formula_bypasses_and_keeps_plain_labels(self):
+        values=['+1+HYPERLINK("x")','-1+WEBSERVICE("x")',' =SUM(A1)','- HYPERLINK("x")',
+                '-20 % Rabatt','+43 1 234','-.5']
+        code='require $argv[1]; $values=json_decode($argv[2],true); echo json_encode(array_map("wm_csv_cell",$values));'
+        result=subprocess.run([PHP,'-r',code,str(ROOT/'website/.nocms/module/common/runtime.php'),json.dumps(values)],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertEqual(json.loads(result.stdout),["'"+v for v in values[:4]]+values[4:])
+
+
 @unittest.skipUnless(PHP,'PHP runtime not installed; mandatory PHP HTTP coverage runs in CI')
 class PHPModuleTests(unittest.TestCase):
     def setUp(self):
@@ -104,6 +115,39 @@ class PHPModuleTests(unittest.TestCase):
         self.assertNotIn('127.0.0.1',(self.data/'analytics.json').read_text());self.assertFalse((self.data/'rate.json').exists())
         export=subprocess.run([PHP,str(self.site/'api/analytics.php'),'--export'],env=self.env,capture_output=True,text=True)
         self.assertEqual(export.returncode,0,export.stderr);self.assertIn('date,page,pageviews',export.stdout)
+    def test_analytics_optional_per_client_cap(self):
+        self.config['analytics']['max_hits_per_client_day']=2;self.save_config()
+        for _ in range(4):self.assertEqual(self.request('/api/analytics.php',json_body={'page':'/'})[0],204)
+        self.assertEqual(json.loads((self.data/'analytics.json').read_text()).popitem()[1],{'/':2})
+        self.assertNotIn('127.0.0.1',(self.data/'rate.json').read_text())
+    def test_quotas_are_separate_per_form(self):
+        for _ in range(3):self.assertEqual(self.contact()[0],202)
+        self.assertEqual(self.contact()[0],429)
+        token=self.token('/api/newsletter.php')
+        status,body,_=self.request('/api/newsletter.php',data={'csrf':token,'website':'','action':'signup','email':'visitor@example.invalid','consent':'yes'})
+        self.assertEqual(status,202,body)
+    def test_trusted_proxy_uses_forwarded_client_only_from_configured_proxy(self):
+        # Without configuration a forged X-Forwarded-For changes nothing: the quota still hits this client.
+        for i in range(3):self.assertEqual(self.request('/api/contact.php',data=self.form(),headers={'X-Forwarded-For':'203.0.113.%d'%i})[0],202)
+        self.assertEqual(self.request('/api/contact.php',data=self.form(),headers={'X-Forwarded-For':'203.0.113.9'})[0],429)
+        self.config['trusted_proxies']=['127.0.0.1'];self.save_config()
+        token=self.token_for('/api/contact.php',{'X-Forwarded-For':'198.51.100.7'})
+        data=self.form(token);self.assertEqual(self.request('/api/contact.php',data=data,headers={'X-Forwarded-For':'198.51.100.7'})[0],202)
+        # The signed form token is bound to the visitor, not to the proxy.
+        data=self.form(self.token_for('/api/contact.php',{'X-Forwarded-For':'198.51.100.7'}))
+        self.assertEqual(self.request('/api/contact.php',data=data,headers={'X-Forwarded-For':'198.51.100.8'})[0],403)
+        self.config['trusted_proxies']=['not-an-ip'];self.save_config()
+        self.assertEqual(self.request('/api/contact.php')[0],503)
+    def form(self,token=None):
+        return {'csrf':token or self.token('/api/contact.php'),'website':'','name':'Erika','email':'v@example.invalid','message':'Hallo'}
+    def token_for(self,path,headers):
+        status,body,_=self.request(path,headers=headers);self.assertEqual(status,200,body)
+        return unescape(re.search(r'name="csrf" value="([^"]+)"',body).group(1))
+    def test_newsletter_export_neutralizes_formula_cells(self):
+        store={'a'*32:{'email':'=cmd@example.invalid','state':'confirmed','consent_version':'test-v1','confirmed_at':'2026-11-01T00:00:00+00:00'}}
+        (self.data/'newsletter.json').write_text(json.dumps(store))
+        export=subprocess.run([PHP,str(self.site/'api/newsletter.php'),'--export-confirmed'],env=self.env,capture_output=True,text=True)
+        self.assertEqual(export.returncode,0,export.stderr);self.assertIn(",'=cmd@example.invalid,",export.stdout)
     def test_analytics_disabled_and_get_are_non_collecting(self):
         self.assertEqual(self.request('/api/analytics.php')[0],405)
         self.config['analytics']['enabled']=False;self.save_config()
