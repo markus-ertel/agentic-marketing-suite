@@ -30,7 +30,7 @@ Das [Profil-Schema](../schemas/weekly-review-profile.schema.json) und das [synth
 | `approvals` | optional dieselbe Dashboard-Konfiguration (`config_path`) oder explizite Protokolle mit Label/Pfad |
 | `schedule` | optionaler **Zeitplanwunsch**, keine aktive Automation |
 
-Das Profil enthält keine Passwörter, Tokens oder beliebige Shell-Kommandos. Die erlaubte Credential-Referenz `token_env` nennt nur eine Umgebungsvariable. Der Harness prüft Zugriffsrechte, Zweck, zulässige Modellverarbeitung und die Verfügbarkeit tatsächlicher Credentials. Ein geeigneter bestehender Auftrag kann wiederkehrende Lese-/Berichtsläufe abdecken; keine erfundene neue menschliche Freigabe je Woche erzeugen. Änderungen außerhalb dieses Rahmens bedürfen einer passenden Entscheidung. Versand, Veröffentlichung und Budgetänderung behalten ihre gesonderten Aktionsfreigaben.
+Das Profil enthält keine Passwörter, Tokens oder beliebige Shell-Kommandos. Die erlaubte Credential-Referenz `token_env` nennt nur eine Umgebungsvariable, die mit `GOOGLE_` beginnt; andere Namen werden abgelehnt, damit kein anderes Geheimnis als Google-Token versendet wird. Der Harness prüft Zugriffsrechte, Zweck, zulässige Modellverarbeitung und die Verfügbarkeit tatsächlicher Credentials. Ein geeigneter bestehender Auftrag kann wiederkehrende Lese-/Berichtsläufe abdecken; keine erfundene neue menschliche Freigabe je Woche erzeugen. Änderungen außerhalb dieses Rahmens bedürfen einer passenden Entscheidung. Versand, Veröffentlichung und Budgetänderung behalten ihre gesonderten Aktionsfreigaben.
 
 ### Unterstützte Quellen
 

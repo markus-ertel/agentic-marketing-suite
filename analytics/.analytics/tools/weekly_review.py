@@ -165,7 +165,7 @@ def load_profile(path):
             if local_path(source.get('manifest_path'),path.parent).suffix.lower()!='.json':raise ValueError('Explicit manifest required')
         elif kind in ('ga4','gsc'):
             if set(source)&{'csv_path','manifest_path'}:raise ValueError('Mixed source settings')
-            if re.fullmatch(r'[A-Z][A-Z0-9_]*',source.get('token_env','GOOGLE_OAUTH_ACCESS_TOKEN')) is None:
+            if not fetch_google.valid_token_env(source.get('token_env','GOOGLE_OAUTH_ACCESS_TOKEN')):
                 raise ValueError('Credential environment reference required, never a token value')
             if kind=='ga4':
                 if set(source)&{'site','dimension'} or not isinstance(source.get('property'),str) or not re.fullmatch(r'[0-9]{1,32}',source['property']):

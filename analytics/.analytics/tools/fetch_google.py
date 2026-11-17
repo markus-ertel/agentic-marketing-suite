@@ -12,15 +12,44 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import sys
 from urllib import parse, request
 from zoneinfo import ZoneInfo
+
+
+import re
+
+# Preserve simple numbers, phone-like numbers and plain promotional labels only.
+SAFE_SIGNED = re.compile(r"(?:[+-](?:[0-9]+(?:[ .,][0-9]+)*|[.,][0-9]+)(?:\s*%(?:\s+[A-Za-zÄÖÜäöüß]+)*)?|-[ ]+[A-Za-zÄÖÜäöüß]+(?:[ ]+[A-Za-zÄÖÜäöüß]+)*)\Z")
+
+
+def formula_like(value):
+    if not isinstance(value, str) or not value:
+        return False
+    if value[0] in '\t\r\n':
+        return True
+    probe = value.lstrip(' \t\r\n')
+    if not probe:
+        return False
+    if probe[0] in '=@':
+        return True
+    return probe[0] in '+-' and SAFE_SIGNED.fullmatch(probe) is None
+
+
+def neutralize(value):
+    return "'" + value if formula_like(value) else value
 
 GA4_URL = 'https://analyticsdata.googleapis.com/v1beta/properties/%s:runReport'
 GSC_URL = 'https://www.googleapis.com/webmasters/v3/sites/%s/searchAnalytics/query'
 # Distinct users are deliberately absent: daily/channel users cannot be added.
 GA4_METRICS = ['sessions', 'engagedSessions', 'keyEvents']
 PAGE = 10000
+
+
+def valid_token_env(name):
+    # Only Google token variables: no other secret of this machine may be sent as a Bearer token.
+    return isinstance(name, str) and re.fullmatch(r'GOOGLE_[A-Z0-9_]+', name) is not None
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -95,14 +124,16 @@ def write_dataset(out_dir, dataset_id, columns, rows, metrics, source, start, en
     stream = io.StringIO()
     writer = csv.DictWriter(stream, fieldnames=columns, lineterminator='\n')
     writer.writeheader()
-    writer.writerows(rows)
+    # Search queries and page paths come from outsiders; never let them run as spreadsheet formulas.
+    writer.writerows({key: neutralize(value) if key not in metrics else value for key, value in row.items()} for row in rows)
     manifest = {'dataset_id': dataset_id, 'source_system': source,
                 'extracted_at': (now or datetime.now(timezone.utc)).isoformat(timespec='seconds'),
                 'time_zone': time_zone, 'grain': 'one row per ' + ' x '.join(c for c in columns if c not in metrics),
                 'period_start': start.isoformat(), 'period_end': end.isoformat(),
                 'privacy_class': privacy_class, 'metric_definitions': metrics,
                 'permissions': 'Read-only API export; query/page values can contain personal or confidential data',
-                'notes': '%d rows. Platform-reported values; sampling, thresholds and consent gaps possible.' % len(rows)}
+                'notes': '%d rows. Platform-reported values; sampling, thresholds and consent gaps possible. '
+                         'Text cells that look like spreadsheet formulas are prefixed with an apostrophe.' % len(rows)}
     paths = (out_dir / (dataset_id + '.csv'), out_dir / (dataset_id + '.manifest.json'))
     created = []
     try:
@@ -131,6 +162,8 @@ def main(argv=None, post=http_post, today=None):
     parser.add_argument('--time-zone', help='GA4: tatsächliche IANA-Property-Zeitzone erforderlich; GSC: immer America/Los_Angeles')
     parser.add_argument('--token-env', default='GOOGLE_OAUTH_ACCESS_TOKEN')
     args = parser.parse_args(argv)
+    if not valid_token_env(args.token_env):
+        parser.error('--token-env muss mit GOOGLE_ beginnen (z. B. GOOGLE_OAUTH_ACCESS_TOKEN)')
     token = os.environ.get(args.token_env)
     if not token:
         parser.error('Umgebungsvariable %s fehlt (read-only OAuth-Token)' % args.token_env)
