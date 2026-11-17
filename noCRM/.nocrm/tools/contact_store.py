@@ -6,6 +6,8 @@ import csv
 import json
 import os
 import tempfile
+import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 CONTACT_FIELDS='contact_id,display_name,organization,email,phone,preferred_channel,language,relationship_role,updated_at'.split(',')
@@ -20,6 +22,28 @@ def atomic_write(path,text):
         os.replace(tmp,path)
     finally:
         if os.path.exists(tmp): os.unlink(tmp)
+
+# Spreadsheet programs run cells starting with these characters as formulas (CSV injection).
+FORMULA_START=('=','+','-','@','\t','\r')
+
+def neutralize(value):
+    value=value or ''
+    return "'"+value if value.lstrip(' \t\r\n').startswith(FORMULA_START) else value
+
+@contextmanager
+def store_lock(path,timeout=10):
+    """Serialize read-modify-write so parallel agents cannot silently drop contacts."""
+    lock=Path(str(path)+'.lock');deadline=time.monotonic()+timeout
+    while True:
+        try:fd=os.open(str(lock),os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);break
+        except FileExistsError:
+            # No stale-lock takeover: after a crash a person removes the lock deliberately.
+            if time.monotonic()>deadline:raise ValueError('Contact store is locked; retry later, do not delete an active lock')
+            time.sleep(0.05)
+    try:
+        os.close(fd);yield
+    finally:
+        lock.unlink()
 
 def init(root):
     root=Path(root).resolve()
@@ -38,18 +62,21 @@ def add(root,contact_id,display_name,email='',organization='',language=''):
     root=Path(root).resolve();p=root/'kontakte/contacts.csv'
     if not p.exists(): raise ValueError('Workspace not initialized: use init first')
     if not contact_id.strip() or not display_name.strip(): raise ValueError('Contact id and name required')
-    if any(ch in contact_id for ch in ('\n','\r','/','\\')): raise ValueError('Unsafe contact id')
-    with open(p,encoding='utf-8',newline='') as f:
-        rdr=csv.DictReader(f)
-        if rdr.fieldnames!=CONTACT_FIELDS: raise ValueError('Unexpected CSV fields')
-        rows=list(rdr)
-    if any(x['contact_id']==contact_id for x in rows): raise ValueError('Contact already exists')
-    now=datetime.now(timezone.utc).isoformat()
-    rows.append(dict.fromkeys(CONTACT_FIELDS,''))
-    rows[-1].update(contact_id=contact_id,display_name=display_name,organization=organization,email=email,language=language,updated_at=now)
-    from io import StringIO
-    f=StringIO(newline='');wr=csv.DictWriter(f,fieldnames=CONTACT_FIELDS);wr.writeheader();wr.writerows(rows)
-    atomic_write(p,f.getvalue());return True
+    if any(ch in contact_id for ch in ('\n','\r','/','\\')) or contact_id.lstrip(' \t\r\n').startswith(FORMULA_START): raise ValueError('Unsafe contact id')
+    with store_lock(p):
+        with open(p,encoding='utf-8',newline='') as f:
+            rdr=csv.DictReader(f)
+            if rdr.fieldnames!=CONTACT_FIELDS: raise ValueError('Unexpected CSV fields')
+            rows=list(rdr)
+        if any(x['contact_id']==contact_id for x in rows): raise ValueError('Contact already exists')
+        now=datetime.now(timezone.utc).isoformat()
+        rows.append(dict.fromkeys(CONTACT_FIELDS,''))
+        rows[-1].update(contact_id=contact_id,display_name=neutralize(display_name),organization=neutralize(organization),
+                        email=neutralize(email),language=neutralize(language),updated_at=now)
+        from io import StringIO
+        f=StringIO(newline='');wr=csv.DictWriter(f,fieldnames=CONTACT_FIELDS);wr.writeheader();wr.writerows(rows)
+        atomic_write(p,f.getvalue())
+    return True
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--root',default='.')
