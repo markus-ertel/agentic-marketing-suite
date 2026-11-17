@@ -5,6 +5,13 @@ class CodexAppServer(Adapter):
     capabilities = {'streaming': True, 'resume': True, 'interactions': True}
     notice = 'App Server; externe Rückfragen werden mit ihrem Originalinhalt durchgereicht.'
 
+    MAX_DIFF = 200_000
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # File changes arrive as items before their approval request; keep them to show what is approved.
+        self.file_changes = {}
+
     def connect(self):
         self.start()
         self.request({'method': 'initialize', 'params': {'clientInfo': {'name': 'agentic_marketing_dashboard', 'title': 'Agentic Marketing Dashboard', 'version': '0.1.0'}}})
@@ -30,13 +37,27 @@ class CodexAppServer(Adapter):
             data = {'request_id': str(record['id']), 'rpc_id': record['id'], 'request': {'method': method, 'params': params}}
             if method in ('item/commandExecution/requestApproval', 'item/fileChange/requestApproval'):
                 data['decisions'] = ['accept', 'decline', 'cancel']
+            if method == 'item/fileChange/requestApproval':
+                # Never ask for a blind approval: attach paths and diffs, or say they are unknown.
+                data['changes'] = self.file_changes.get(params.get('itemId'))
             self.event('input_requested', **data)
         elif method == 'turn/started':
             self.status('arbeitet')
         elif method == 'item/agentMessage/delta':
             self.event('message.delta', text=params.get('delta', ''), item_id=params.get('itemId'))
+        elif method in ('item/started', 'item/updated') and params.get('item', {}).get('type') == 'fileChange':
+            item = params['item']
+            changes = []
+            for change in item.get('changes') or []:
+                if isinstance(change, dict):
+                    kind = change.get('kind')
+                    changes.append({'path': str(change.get('path', '')),
+                                    'kind': str(kind.get('type', '') if isinstance(kind, dict) else kind or ''),
+                                    'diff': str(change.get('diff', ''))[:self.MAX_DIFF]})
+            self.file_changes[item.get('id')] = changes
         elif method == 'item/completed':
             item = params.get('item', {})
+            self.file_changes.pop(item.get('id'), None)
             if item.get('type') == 'agentMessage':
                 self.event('message.final', text=item.get('text', ''), item_id=item.get('id'))
         elif method == 'turn/completed':

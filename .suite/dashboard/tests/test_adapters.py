@@ -46,6 +46,18 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(events[-1]['status'],'Fehler')
         self.assertFalse(any(e.get('status')=='abgeschlossen' for e in events))
 
+    def test_codex_file_approval_carries_paths_and_diff(self):
+        adapter, events = self.make(CodexAppServer)
+        adapter.handle({'method':'item/started','params':{'item':{'type':'fileChange','id':'fc1','changes':[
+            {'path':'marketing/plan.md','kind':{'type':'update'},'diff':'@@ -1 +1 @@\n-alt\n+neu'}]}}})
+        adapter.handle({'id':7,'method':'item/fileChange/requestApproval','params':{'itemId':'fc1','reason':'Plan anpassen'}})
+        self.assertEqual(events[-1]['changes'],[{'path':'marketing/plan.md','kind':'update','diff':'@@ -1 +1 @@\n-alt\n+neu'}])
+        # Unknown item: the prompt says so instead of showing nothing.
+        adapter.handle({'id':8,'method':'item/fileChange/requestApproval','params':{'itemId':'unknown'}})
+        self.assertIsNone(events[-1]['changes'])
+        adapter.handle({'method':'item/completed','params':{'item':{'type':'fileChange','id':'fc1'}}})
+        self.assertNotIn('fc1',adapter.file_changes)
+
     def test_multiple_sessions_replay_status_and_buffer_gap(self):
         one = Session({'id':'pi','label':'Pi','adapter':'pi-rpc'},'marketing')
         two = Session({'id':'codex','label':'Codex','adapter':'codex-appserver'},'creative')

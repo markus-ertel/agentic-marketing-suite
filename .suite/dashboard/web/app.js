@@ -76,6 +76,9 @@ function renderInteraction(event){
  box.replaceChildren(el('b',params.title||'Der Agent benötigt eine Eingabe.'));box.hidden=false;
  if(params.reason||params.message)box.append(el('p',params.reason||params.message));
  if(params.command)box.append(el('pre',params.command));
+ if(params.cwd)box.append(el('p','Verzeichnis: '+params.cwd,'muted'));
+ if(params.grantRoot)box.append(el('p','Verlangt Schreibrecht für: '+params.grantRoot));
+ if(request.method==='item/fileChange/requestApproval'){if(Array.isArray(event.changes)&&event.changes.length){for(const change of event.changes){box.append(el('p',(change.kind||'Änderung')+': '+change.path));if(change.diff)box.append(el('pre',change.diff));}}else box.append(el('p','Betroffene Dateien sind nicht bekannt. Im Zweifel ablehnen.'));}
  const send=async response=>{try{await api('/api/interaction',{session:state.session,request_id:event.request_id,response});box.hidden=true;}catch(e){toast(e.message);}};
  const action=(label,response)=>{const button=el('button',label);button.onclick=()=>send(response);box.append(button);};
  if(event.decisions){for(const decision of event.decisions)action(decision==='accept'?'Einmal erlauben':decision==='decline'?'Ablehnen':'Abbrechen',{decision});return;}
