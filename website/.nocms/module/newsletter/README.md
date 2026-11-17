@@ -25,4 +25,18 @@ Der private CSV-Export enthält nur aktuell bestätigte Anmeldungen mit ID, E-Ma
 
 MTA-Annahme ist nicht Zustellung. Ein unklarer Bestätigungsversand wird nicht blind wiederholt; Betreiber/Transportlog prüfen. Bei Outbox muss ein tatsächlich betriebener, freigegebener Zustellprozess die Nachricht weitergeben. Ohne diesen Prozess erreicht niemand eine E-Mail. Abgelaufene Anmeldungen und alte Abmeldedaten über die tägliche Wartung bereinigen; Aufbewahrung und Betroffenenrechte organisatorisch festlegen. Tests spielen den vollständigen GET/POST-/Abmeldeablauf mit einer privaten Outbox durch.
 
-Bestätigungs-/Abmelde-URLs enthalten Zugriffstoken und gehören nicht in öffentliche Protokolle oder Analytics. Referrer werden von den Formularseiten unterdrückt; Query-Redaktion und Aufbewahrung der Hosting-Accesslogs muss der Betreiber einrichten. Der Analytics-Lite-Client sendet nur den Pfad, niemals solche Query-Token.
+Bestätigungs-/Abmelde-URLs enthalten Zugriffstoken und gehören nicht in öffentliche Protokolle oder Analytics. Referrer werden von den Formularseiten unterdrückt; Query-Redaktion und Aufbewahrung der Hosting-Accesslogs muss der Betreiber einrichten, zum Beispiel:
+
+```apache
+# Apache: Aufrufe mit Token nicht protokollieren
+SetEnvIf Request_URI "newsletter\.php" nl_token
+SetEnvIf Query_String "(^|&)(confirm|unsubscribe)=" nl_token
+CustomLog ${APACHE_LOG_DIR}/access.log combined env=!nl_token
+```
+
+```nginx
+# nginx: Newsletter-Endpunkt ohne Accesslog
+location = /api/newsletter.php { access_log off; include fastcgi_params; fastcgi_pass php; }
+```
+
+Bestätigungslinks sind einmalig und 24 Stunden gültig. Abmeldelinks bleiben bewusst dauerhaft gültig, damit Abmelden immer möglich ist; ein abgegriffener Link erlaubt nur die Abmeldung. Der CSV-Export stellt Zellen, die wie eine Tabellenformel beginnen, ein `'` voran. Der Analytics-Lite-Client sendet nur den Pfad, niemals solche Query-Token.
