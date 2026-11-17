@@ -10,11 +10,14 @@ Python-3.9-Standardbibliothek für unabhängige IMAP/SMTP-Konten. noCRM verwalte
 
 [message.example.json](message.example.json) ist ein lokaler Entwurf mit Zweck, Kontakt- und Evidenzreferenz; ein Textfeld ist kein Nachweis einer Einwilligung. Unterstützt werden `to`, `cc`, `bcc`, UTF-8-Textbetreff/-Body, lokale Anhänge (`attachments: [{"path":"…"}]`) und explizite `in_reply_to`/`references`. Adressen sind einzelne ASCII-Mailboxen; keine beliebigen Header. Bis zu 20 Empfänger, zehn Anhänge à 5 MiB und 10 MiB Gesamtgröße. Das ist kein Massenversandwerkzeug.
 
+**Einwilligung und Anhänge im Plan (ab Planversion 0.2):** Bei `purpose: marketing` prüft `prepare` mit derselben Logik wie `preflight.py`, ob für genau diesen Kontakt eine aktuelle, dokumentierte E-Mail-Einwilligung vorliegt, und verlangt genau eine Empfängeradresse, die der Kontaktadresse entspricht. `execute` prüft die Einwilligung unmittelbar vor dem Versand erneut; ein späterer Widerruf blockiert. Der Plan nennt jeden Anhang mit Dateiname und SHA-256, damit die freigebende Person sieht, was das Haus verlässt. Zugangsdaten, Schlüssel, Protokolle und Datenbankdumps können nicht angehängt werden.
+
 ```sh
 # Root-relative Ausgaben; Zielordner vorher privat anlegen. Keine Netzwerkaktion.
 python3 noCRM/.nocrm/integrationen/email/adapter.py --root /arbeitskopie prepare \
   --account /privat/account.json --input /privat/message.json \
   --message-output draft.eml --plan-output mail-plan.json
+# Marketing zusätzlich: --contacts kontakte/contacts.csv --consents kontakte/consents.csv
 
 # Erst danach: Plan-Datei samt Hash, Reviews und exaktem target menschlich freigeben.
 python3 noCRM/.nocrm/integrationen/email/adapter.py --root /arbeitskopie execute \

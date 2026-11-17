@@ -32,6 +32,26 @@ def iso_date(x):
     except Exception: return None
 
 
+def marketing_consent(consents, cid, channel, now):
+    """Shared with the mail adapter: returns (problems, valid consent rows) for one contact and channel."""
+    problems=[]; valid=[]
+    matches=[c for c in consents if c.get('contact_id','').strip()==cid and c.get('channel','').strip()==channel and c.get('purpose','').strip()=='marketing']
+    if not matches:
+        problems.append('Marketing consent missing; no marketing send')
+    elif any(c.get('status') in {'revoked','denied','objected'} for c in matches):
+        problems.append('Marketing permission revoked/denied/objected; blocked')
+    else:
+        for c in matches:
+            if c.get('status') in ALLOW_MARKETING and c.get('evidence_ref','').strip() and c.get('basis','')=='consent':
+                t=iso_date(c.get('recorded_at',''))
+                expiry=iso_date(c.get('valid_until','')) if c.get('valid_until','') else None
+                if t and t<=now and (not c.get('valid_until') or (expiry and expiry>now)):
+                    valid.append(c)
+        if not valid:
+            problems.append('No verifiable, current, channel-specific marketing consent; special legal exceptions require separate expert review')
+    return problems, valid
+
+
 def run(contacts, consents, draft, now=None):
     now=now or datetime.now(timezone.utc)
     problems=[]; notes=[]
@@ -51,22 +71,7 @@ def run(contacts, consents, draft, now=None):
         if channel=='email' and not c.get('email','').strip(): problems.append('Email address missing')
         if channel in {'sms','whatsapp','telefon'} and not c.get('phone','').strip(): problems.append('Phone number missing')
     if purpose=='marketing':
-        matches=[c for c in consents if c.get('contact_id','').strip()==cid and c.get('channel','').strip()==channel and c.get('purpose','').strip()=='marketing']
-        if not matches:
-            problems.append('Marketing consent missing; no marketing send')
-        else:
-            negatives=[c for c in matches if c.get('status') in {'revoked','denied','objected'}]
-            if negatives: problems.append('Marketing permission revoked/denied/objected; blocked')
-            else:
-                valid=[]
-                for c in matches:
-                    if c.get('status') in ALLOW_MARKETING and c.get('evidence_ref','').strip() and c.get('basis','')=='consent':
-                        t=iso_date(c.get('recorded_at',''))
-                        expiry=iso_date(c.get('valid_until','')) if c.get('valid_until','') else None
-                        if t and t<=now and (not c.get('valid_until') or (expiry and expiry>now)):
-                            valid.append(c)
-                if not valid:
-                    problems.append('No verifiable, current, channel-specific marketing consent; special legal exceptions require separate expert review')
+        problems.extend(marketing_consent(consents,cid,channel,now)[0])
         if not bool(draft.get('authorization',{}).get('allowed',False)):
             problems.append('Specific sender authorization missing')
         if not bool(draft.get('review',{}).get('approved',False)):

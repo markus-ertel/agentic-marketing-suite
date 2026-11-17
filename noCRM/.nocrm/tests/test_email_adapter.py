@@ -89,6 +89,35 @@ class MailAdapterTests(unittest.TestCase):
             path=self.root/name;path.parent.mkdir(exist_ok=True);path.write_text('fictional-secret')
             self.message['attachments']=[{'path':name}]
             with self.subTest(name=name),self.assertRaises(mail.CapabilityError):self.prepare()
+    def marketing_files(self,status='granted'):
+        (self.root/'contacts.csv').write_text('contact_id,display_name,email,phone\ncontact-demo,Erika Beispiel,visitor@example.invalid,\n')
+        (self.root/'consents.csv').write_text('contact_id,channel,purpose,status,recorded_at,evidence_ref,basis,valid_until,notes\n'
+            'contact-demo,email,marketing,%s,2026-01-01T00:00:00+00:00,fixture:double-opt-in,consent,,\n'%status)
+        self.message.update(purpose='marketing',legal_basis_evidence_ref='fixture:double-opt-in')
+    def test_marketing_requires_documented_consent_at_prepare_and_send(self):
+        self.marketing_files()
+        with self.assertRaises(mail.CapabilityError):self.prepare()
+        self.assertFalse((self.root/'draft.eml').exists())
+        value=self.prepare(contacts='contacts.csv',consents='consents.csv')
+        self.assertEqual(value['consent']['evidence_ref'],'fixture:double-opt-in')
+        mail.validate_plan(self.root,value)
+        # A revocation after review blocks the send.
+        self.marketing_files(status='revoked')
+        with self.assertRaises(mail.CapabilityError):mail.validate_plan(self.root,value)
+    def test_marketing_without_consent_or_to_other_address_is_blocked(self):
+        self.marketing_files(status='denied')
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+        self.marketing_files();self.message['to']=['someone-else@example.invalid']
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+        self.message['to']=['visitor@example.invalid'];self.message['bcc']=['extra@example.invalid']
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+    def test_plan_lists_attachments_with_hashes(self):
+        import hashlib
+        (self.root/'offer.pdf').write_bytes(b'%PDF fictional');self.message['attachments']=[{'path':'offer.pdf'}]
+        value=self.prepare()
+        self.assertEqual(value['attachments'],[{'filename':'offer.pdf','sha256':hashlib.sha256(b'%PDF fictional').hexdigest()}])
+        changed=dict(value,attachments=[])
+        with self.assertRaises(mail.CapabilityError):mail.validate_plan(self.root,changed)
     def test_draft_append_is_separate_from_send(self):
         value=self.prepare(mode='draft');client=IMAP(ssl_context=__import__('ssl').create_default_context())
         with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}):

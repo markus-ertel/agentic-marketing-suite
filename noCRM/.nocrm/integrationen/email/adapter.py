@@ -21,6 +21,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[4] / '.suite/capabilitie
 from runtime import (CapabilityError, CheckError, clean_string, digest, load_json, relative_file,
                      bound_execution_log, require_approval, run_once, snapshot_json, write_json, write_new)
 from private_files import is_private
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+from preflight import marketing_consent, read_csv
 
 MAX_MESSAGE = 10 * 1024 * 1024
 
@@ -84,7 +86,29 @@ def new_output(root, relative):
     return path
 
 
-def prepare(root, account, spec, message_path, plan_path, mode='send'):
+def check_consent(root, consent, contact_id, recipients, now=None):
+    """Marketing mail needs a current, documented email consent of exactly this contact at send time."""
+    if not isinstance(consent, dict) or set(consent) != {'contacts_path', 'consents_path', 'evidence_ref'}:
+        raise CapabilityError('Marketing mail needs contacts and consents files')
+    contacts = read_csv(relative_file(root, consent['contacts_path']), {'contact_id', 'email'})
+    consents = read_csv(relative_file(root, consent['consents_path']), {'contact_id', 'channel', 'purpose', 'status'})
+    match = [c for c in contacts if c.get('contact_id', '').strip() == contact_id]
+    if len(match) != 1 or recipients != [match[0].get('email', '').strip().lower()]:
+        raise CapabilityError('Marketing mail goes to exactly the consenting contact address')
+    problems, valid = marketing_consent(consents, contact_id, 'email', now or datetime.now(timezone.utc))
+    if problems:
+        raise CapabilityError('Marketing consent check failed: ' + '; '.join(problems))
+    return sorted(c['evidence_ref'] for c in valid)[0]
+
+
+def attachment_list(data):
+    import hashlib
+    parsed = BytesParser(policy=policy.default).parsebytes(data)
+    return [{'filename': part.get_filename() or '', 'sha256': hashlib.sha256(part.get_payload(decode=True) or b'').hexdigest()}
+            for part in parsed.walk() if part.get_content_disposition() == 'attachment']
+
+
+def prepare(root, account, spec, message_path, plan_path, mode='send', contacts=None, consents=None):
     validate_account(account)
     if not isinstance(spec, dict) or not {'to', 'subject', 'body', 'purpose', 'contact_id', 'legal_basis_evidence_ref'} <= spec.keys():
         raise CapabilityError('Message, contact, purpose and legal evidence are required')
@@ -137,11 +161,18 @@ def prepare(root, account, spec, message_path, plan_path, mode='send'):
     data = message.as_bytes()
     if len(data) > MAX_MESSAGE:
         raise CapabilityError('Message exceeds 10 MiB')
+    consent = None
+    if spec['purpose'] == 'marketing':
+        consent = {'contacts_path': contacts, 'consents_path': consents, 'evidence_ref': ''}
+        consent['evidence_ref'] = check_consent(root, dict(consent, evidence_ref='-'), spec['contact_id'],
+                                                [r.lower() for r in recipients])
     eml, output = new_output(root, message_path), new_output(root, plan_path)
     if eml == output:
         raise CapabilityError('Message and plan must be separate files')
     import hashlib
-    value = {'capability': 'mail.send' if mode == 'send' else 'mail.save_draft', 'version': '0.1',
+    value = {'capability': 'mail.send' if mode == 'send' else 'mail.save_draft', 'version': '0.2',
+             # The approver sees exactly which files leave the house, and under which consent.
+             'attachments': attachment_list(data), 'consent': consent,
              'account': account, 'message_path': message_path, 'message_sha256': hashlib.sha256(data).hexdigest(),
              'envelope_from': account['from'], 'envelope_to': recipients, 'purpose': spec['purpose'],
              'contact_id': spec['contact_id'], 'legal_basis_evidence_ref': spec['legal_basis_evidence_ref'],
@@ -153,8 +184,8 @@ def prepare(root, account, spec, message_path, plan_path, mode='send'):
 
 def validate_plan(root, value):
     expected = {'capability', 'version', 'account', 'message_path', 'message_sha256', 'envelope_from', 'envelope_to',
-                'purpose', 'contact_id', 'legal_basis_evidence_ref', 'action', 'target'}
-    if not isinstance(value, dict) or set(value) != expected or value['version'] != '0.1':
+                'purpose', 'contact_id', 'legal_basis_evidence_ref', 'action', 'target', 'attachments', 'consent'}
+    if not isinstance(value, dict) or set(value) != expected or value['version'] != '0.2':
         raise CapabilityError('Invalid mail plan')
     for field in ('contact_id', 'legal_basis_evidence_ref'):clean_string(value[field], field)
     if value['purpose'] not in ('service','personal','marketing','transactional'):raise CapabilityError('Invalid purpose')
@@ -172,6 +203,13 @@ def validate_plan(root, value):
     if path.stat().st_size > MAX_MESSAGE or digest(path) != value['message_sha256']:
         raise CapabilityError('Message changed since review')
     data = path.read_bytes()
+    if attachment_list(data) != value['attachments']:
+        raise CapabilityError('Attachments differ from the reviewed plan')
+    if value['purpose'] == 'marketing':
+        # Re-checked immediately before sending: a revocation after review blocks the send.
+        check_consent(root, value['consent'], value['contact_id'], [r.lower() for r in value['envelope_to']])
+    elif value['consent'] is not None:
+        raise CapabilityError('Consent block only for marketing mail')
     import hashlib
     if hashlib.sha256(data).hexdigest() != value['message_sha256']:
         raise CapabilityError('Message changed during read')
@@ -306,6 +344,8 @@ def main():
     draft = sub.add_parser('prepare')
     for field in ('account', 'input', 'message-output', 'plan-output'):draft.add_argument('--' + field, required=True)
     draft.add_argument('--mode', choices=('send', 'draft'), default='send')
+    draft.add_argument('--contacts', help='Root-relative contacts.csv; required for marketing')
+    draft.add_argument('--consents', help='Root-relative consents.csv; required for marketing')
     read = sub.add_parser('read')
     for field in ('account', 'mailbox', 'authorization-ref', 'execution-log', 'key', 'output'):read.add_argument('--' + field, required=True)
     read.add_argument('--limit', type=int, default=20)
@@ -325,7 +365,7 @@ def main():
         elif args.command == 'import-contact':
             result = import_contact(args.root,args.input,args.output)
         elif args.command == 'prepare':
-            value = prepare(args.root, validate_account(load_json(args.account)), load_json(args.input), args.message_output, args.plan_output, args.mode)
+            value = prepare(args.root, validate_account(load_json(args.account)), load_json(args.input), args.message_output, args.plan_output, args.mode, args.contacts, args.consents)
             result = {'status': 'planned', 'target': value['target'], 'action': value['action']}
         elif args.command == 'read':
             if not args.harness_authorized:raise CapabilityError('Explicit authorized read required')
