@@ -25,7 +25,8 @@ class TestSuiteContracts(unittest.TestCase):
  def test_lead_repeated_in_supporting(self):
   with self.assertRaises(CheckError):check('work-order',dict(id='abcd',objective='Build a relevant campaign',lead_module='marketing',supporting_modules=['marketing'],status='proposed',created_at=T,input_refs=[]))
  def test_artifact_relpath(self):
-  with self.assertRaises(CheckError):check('artifact',artifact(path='../secrets'))
+  for path in ('../secrets','~/.ssh/id_rsa','~user/x.md','docs/a\x00b.md','docs/a\nb.md','C:/x.md','/etc/passwd'):
+   with self.subTest(path=path),self.assertRaises(CheckError):check('artifact',artifact(path=path))
  def test_artifact_draft(self):
   check('artifact',artifact(path='creative/projekt/x.svg'))
  def test_boolean_version_rejected(self):

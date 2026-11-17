@@ -10,6 +10,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from approval_audit import record_decision, record_request
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from approval_key import use_test_key
 import export_platform
 from export_platform import CapabilityError, export
 
@@ -36,6 +38,7 @@ class ExportTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+        self.key = use_test_key(self)
         self.log = self.root / 'approvals.jsonl'
         self.source = self.root / 'advertising' / 'kampagne.json'
         self.source.parent.mkdir()
@@ -56,7 +59,7 @@ class ExportTests(unittest.TestCase):
         first = record_request(self.log, req, self.root, now=T)
         record_decision(self.log, req['id'], decision, 'Erika Beispiel', (T + timedelta(minutes=1)).isoformat(),
                         'trusted-harness:fictional', 'Fiktive Entscheidung.', first['id'], self.root,
-                        now=T + timedelta(minutes=2))
+                        now=T + timedelta(minutes=2), key=self.key)
         return req['id']
 
     def test_check_only_validates_without_approval_or_output(self):
@@ -163,12 +166,34 @@ class ExportRegressionTests(unittest.TestCase):
             manifest['budget']['daily_max'] = value
             self.assertTrue(export_platform.check_google_ads(manifest))
 
+    def test_ads_daily_budget_over_the_run_must_fit_the_approved_total(self):
+        # The CSV carries only the daily budget: 300 per day for 30 days would allow 9,000 against 300 approved.
+        manifest = json.loads(json.dumps(ADS))
+        manifest['budget'].update(daily_max='300', lifetime_max='300')
+        self.assertTrue(any('Gesamtbudget' in e for e in export_platform.check_google_ads(manifest)))
+        manifest['budget'].update(daily_max='10', lifetime_max='300')
+        self.assertEqual(export_platform.check_google_ads(manifest), [])
+        manifest['budget'].update(daily_max='10.01')
+        self.assertTrue(export_platform.check_google_ads(manifest))
+
+    def test_formula_like_cells_block_the_import_file(self):
+        manifest = json.loads(json.dumps(ADS))
+        manifest['search_ads']['ad_groups'][0]['headlines'][0] = '=HYPERLINK("x")'
+        self.assertEqual(export_platform.check_google_ads(manifest), [])
+        self.source.write_text(json.dumps(manifest))
+        with self.assertRaises(CapabilityError) as error:
+            export('google-ads', self.source, self.root / 'ads.csv', self.root, check_only=True)
+        self.assertIn('Headline 1', str(error.exception))
+        manifest['search_ads']['ad_groups'][0]['headlines'][0] = '-20 % Rabatt'
+        self.source.write_text(json.dumps(manifest))
+        self.assertEqual(export('google-ads', self.source, self.root / 'ads.csv', self.root, check_only=True)['check'], 'pass')
+
     def test_revocation_blocks_export_of_the_original_bytes(self):
         request_id = self.approve(self.source, 'spend', 'google-ads:000-000-0000', budget=300)
         events = [json.loads(line) for line in self.log.read_text().splitlines()]
         record_decision(self.log, request_id, 'revoked', 'Erika Beispiel',
                         (T + timedelta(minutes=3)).isoformat(), 'trusted-harness:fictional',
-                        'Fiktiver Widerruf', events[-1]['id'], self.root, now=T+timedelta(minutes=4))
+                        'Fiktiver Widerruf', events[-1]['id'], self.root, now=T+timedelta(minutes=4), key=self.key)
         out = self.root / 'revoked.csv'
         with self.assertRaises(CapabilityError):
             export('google-ads', self.source, out, self.root, self.log, request_id, 'google-ads:000-000-0000')
