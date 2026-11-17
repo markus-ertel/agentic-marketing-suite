@@ -1,9 +1,26 @@
 """Line-delimited subprocess transport and correlated RPC calls."""
 from collections import deque
 import json
+import os
 import subprocess
 import threading
 import uuid
+
+
+# Credentials of the suite's own executors (mail, SFTP, Google). Agents prepare plans;
+# they must not be able to run the approved action themselves with these secrets.
+EXECUTOR_SECRET_SUFFIXES = ('_PASSWORD', '_KEY_FILE', '_KNOWN_HOSTS_FILE')
+EXECUTOR_SECRET_NAMES = {'GOOGLE_OAUTH_ACCESS_TOKEN', 'SUITE_APPROVAL_KEY_FILE'}
+
+
+def agent_environment(environ=None, allowed=()):
+    environ = os.environ if environ is None else environ
+    if not isinstance(allowed, (list, tuple)) or any(not isinstance(name, str) for name in allowed):
+        raise ValueError('env_allow must list environment variable names')
+    safe = {'PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'LC_CTYPE', 'TMPDIR', 'TERM'}
+    return {name: value for name, value in environ.items()
+            if (name in safe or name in allowed) and name not in EXECUTOR_SECRET_NAMES
+            and not name.upper().endswith(EXECUTOR_SECRET_SUFFIXES)}
 
 
 class Adapter:
@@ -28,6 +45,7 @@ class Adapter:
 
     def start(self, command=None):
         self.process = subprocess.Popen(command or self.profile['command'], cwd=self.cwd,
+                                        env=agent_environment(allowed=self.profile.get('env_allow', [])),
                                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         threading.Thread(target=self._errors, args=(self.process,), daemon=True).start()
         threading.Thread(target=self._read, args=(self.process,), daemon=True).start()
