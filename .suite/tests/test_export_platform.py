@@ -10,6 +10,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from approval_audit import record_decision, record_request
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from approval_key import use_test_key
 import export_platform
 from export_platform import CapabilityError, export
 
@@ -36,6 +38,7 @@ class ExportTests(unittest.TestCase):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
+        self.key = use_test_key(self)
         self.log = self.root / 'approvals.jsonl'
         self.source = self.root / 'advertising' / 'kampagne.json'
         self.source.parent.mkdir()
@@ -56,7 +59,7 @@ class ExportTests(unittest.TestCase):
         first = record_request(self.log, req, self.root, now=T)
         record_decision(self.log, req['id'], decision, 'Erika Beispiel', (T + timedelta(minutes=1)).isoformat(),
                         'trusted-harness:fictional', 'Fiktive Entscheidung.', first['id'], self.root,
-                        now=T + timedelta(minutes=2))
+                        now=T + timedelta(minutes=2), key=self.key)
         return req['id']
 
     def test_check_only_validates_without_approval_or_output(self):
@@ -178,7 +181,7 @@ class ExportRegressionTests(unittest.TestCase):
         events = [json.loads(line) for line in self.log.read_text().splitlines()]
         record_decision(self.log, request_id, 'revoked', 'Erika Beispiel',
                         (T + timedelta(minutes=3)).isoformat(), 'trusted-harness:fictional',
-                        'Fiktiver Widerruf', events[-1]['id'], self.root, now=T+timedelta(minutes=4))
+                        'Fiktiver Widerruf', events[-1]['id'], self.root, now=T+timedelta(minutes=4), key=self.key)
         out = self.root / 'revoked.csv'
         with self.assertRaises(CapabilityError):
             export('google-ads', self.source, out, self.root, self.log, request_id, 'google-ads:000-000-0000')

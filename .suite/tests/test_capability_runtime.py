@@ -7,8 +7,13 @@ import unittest
 
 ROOT=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(ROOT/'.suite/capabilities'))
+import os
+from unittest.mock import patch
+from approval_audit import CheckError
 from runtime import CapabilityError, append_execution, bound_execution_log, require_approval, run_once, snapshot_json
-from approval_audit import record_request, record_decision
+from approval_audit import load_key, record_request, record_decision
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from approval_key import use_test_key
 
 
 def approve(root, plan, action, target):
@@ -21,13 +26,34 @@ def approve(root, plan, action, target):
     for dimension in ('expert','legal'):
         request['reviews'].append({'id':'review-'+dimension,'artifact_id':'artifact-demo','artifact_version':1,'dimension':dimension,'status':'pass','reviewed_at':'2026-10-24T09:00:00+02:00','findings':[],'evidence_refs':['fictional-review']})
     log=root/'approvals.jsonl';event=record_request(log,request,root)
-    decision=record_decision(log,request['id'],'approved','Erika Beispiel (fiktiv)','2026-10-24T11:00:00+02:00','fixture:human','Fiktiver Testentscheid',event['id'],root)
+    decision=record_decision(log,request['id'],'approved','Erika Beispiel (fiktiv)','2026-10-24T11:00:00+02:00','fixture:human','Fiktiver Testentscheid',event['id'],root,key=load_key())
     return log,path,request,decision
 
 
 class CapabilityRuntimeTests(unittest.TestCase):
     def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
+        self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name);self.key=use_test_key(self)
+    def test_unsigned_or_forged_approvals_never_pass_the_gate(self):
+        # H1: an agent without the key can write the log, but cannot produce an accepted approval.
+        path=self.root/'plan.json';path.write_text('{}')
+        log,path,request,event=approve(self.root,{'fixture':True},'publish','sftp:test')
+        _,sha=snapshot_json(path)
+        require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
+        lines=log.read_text().splitlines();last=json.loads(lines[-1])
+        forged=dict(last);forged['signature']=dict(last['signature'],value='0'*64)
+        log.write_text('\n'.join(lines[:-1]+[json.dumps(forged,ensure_ascii=False,separators=(',',':'))])+'\n')
+        with self.assertRaises((CapabilityError,CheckError)):require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
+        unsigned=dict(last);unsigned.pop('signature')
+        log.write_text('\n'.join(lines[:-1]+[json.dumps(unsigned,ensure_ascii=False,separators=(',',':'))])+'\n')
+        with self.assertRaises((CapabilityError,CheckError)):require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
+    def test_gate_refuses_missing_key_and_key_inside_suite(self):
+        log,path,request,event=approve(self.root,{'fixture':True},'publish','sftp:test')
+        _,sha=snapshot_json(path)
+        with patch.dict(os.environ,{},clear=True),self.assertRaises((CapabilityError,CheckError)):
+            require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
+        inside=self.root/'approval.key';inside.write_bytes(self.key)
+        with patch.dict(os.environ,{'SUITE_APPROVAL_KEY_FILE':str(inside)}),self.assertRaises((CapabilityError,CheckError)):
+            require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)
     def test_one_approval_allows_one_execution(self):
         log,path,request,event=approve(self.root,{'fixture':True},'publish','sftp:test')
         _,sha=snapshot_json(path);approval=require_approval(log,request['id'],self.root,path,'publish','sftp:test',sha)

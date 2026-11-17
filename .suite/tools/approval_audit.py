@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Append-only local approval records. No authentication, external execution or dashboard writes."""
+"""Append-only, hash-chained local approval records with signed human decisions.
+
+No external execution or dashboard writes. The signing key authenticates the approving harness,
+not a person; it only helps if the AI agent cannot read the key file (separate OS user/service).
+"""
 import argparse
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
 import sys
+import secrets
 import uuid
 
 from validate_records import CheckError, check, check_bundle, _dt
@@ -29,6 +35,61 @@ def _unique_object(pairs):
 
 def _constant(value):
     raise CheckError('Non-finite JSON number: ' + value)
+
+
+KEY_ENV = 'SUITE_APPROVAL_KEY_FILE'
+GENESIS = '0' * 64
+
+
+def load_key(path=None, root=None):
+    """Signing key of the approving harness. Never inside the suite root, where agents work."""
+    path = path or os.environ.get(KEY_ENV)
+    if not path:
+        raise CheckError('Signing key required: set ' + KEY_ENV + ' (see APPROVALS.md)')
+    path = Path(path).resolve(strict=True)
+    if root is not None:
+        try:
+            path.relative_to(Path(root).resolve(strict=True))
+            raise CheckError('Signing key must not be stored inside the suite root')
+        except ValueError:
+            pass
+    if path.is_dir():
+        raise CheckError('Signing key must be a file')
+    data = path.read_bytes().strip()
+    if len(data) < 32:
+        raise CheckError('Signing key too short')
+    return data
+
+
+def key_id(key):
+    return hashlib.sha256(key).hexdigest()[:16]
+
+
+def _signed_bytes(event):
+    unsigned = {k: v for k, v in event.items() if k != 'signature'}
+    return json.dumps(unsigned, ensure_ascii=False, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
+
+
+def sign(event, key):
+    return {'alg': 'hmac-sha256', 'key_id': key_id(key),
+            'value': hmac.new(key, _signed_bytes(event), hashlib.sha256).hexdigest()}
+
+
+def verify_signature(event, key):
+    signature = event.get('signature')
+    if not isinstance(signature, dict) or signature.get('key_id') != key_id(key):
+        raise CheckError('Decision is not signed with the configured approval key')
+    expected = hmac.new(key, _signed_bytes(event), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, signature.get('value', '')):
+        raise CheckError('Decision signature does not match; the record was altered or forged')
+
+
+def keygen(out):
+    """Create a new key file with owner-only permissions; never overwrite an existing key."""
+    descriptor = os.open(str(out), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    with os.fdopen(descriptor, 'w') as stream:
+        stream.write(secrets.token_hex(32) + '\n')
+    return {'key_file': str(Path(out).resolve()), 'key_id': key_id(Path(out).read_bytes().strip())}
 
 
 def parse_json(text):
@@ -152,13 +213,40 @@ def read_events(log, max_bytes=None):
     if data and not data.endswith(b'\n'):
         raise CheckError('Incomplete audit log; do not overwrite or silently repair it')
     events = []
-    for number, line in enumerate(data.decode('utf-8').split('\n')[:-1], 1):
+    previous, chained = GENESIS, False
+    for number, line in enumerate(data.split(b'\n')[:-1], 1):
         try:
-            events.append(parse_json(line))
+            event = parse_json(line.decode('utf-8'))
         except (ValueError, CheckError) as exc:
             raise CheckError(f'Invalid audit line {number}: {exc}') from exc
+        # Once the chain starts (v0.2.6+), every later line must link to the exact previous bytes.
+        if isinstance(event, dict) and 'prev_hash' in event:
+            if event['prev_hash'] != previous:
+                raise CheckError(f'Hash chain broken at line {number}: earlier records were changed or removed')
+            chained = True
+        elif chained:
+            raise CheckError(f'Unchained record after chained records at line {number}')
+        previous = hashlib.sha256(line + b'\n').hexdigest()
+        events.append(event)
     replay(events)
     return events
+
+
+def chain_head(log):
+    """Hash of the last record; store it outside the suite to detect later truncation or rewriting."""
+    path = Path(log)
+    data = path.read_bytes() if path.exists() else b''
+    lines = data.split(b'\n')[:-1]
+    return {'events': len(lines), 'head': hashlib.sha256(lines[-1] + b'\n').hexdigest() if lines else GENESIS}
+
+
+def verify_checkpoint(log, events, head):
+    """A stored checkpoint must still be a record in the log (append-only, nothing rewritten)."""
+    path = Path(log)
+    lines = path.read_bytes().split(b'\n')[:-1] if path.exists() else []
+    if len(lines) < events or (events and hashlib.sha256(lines[events - 1] + b'\n').hexdigest() != head):
+        raise CheckError('Log no longer contains the checkpoint: records were removed or rewritten')
+    return {'checkpoint': 'pass', 'events_now': len(lines)}
 
 
 @contextmanager
@@ -179,7 +267,10 @@ def _writer(log):
         lock.unlink()
 
 
-def _append(path, events, event):
+def _append(path, events, event, key=None):
+    event = dict(event, prev_hash=chain_head(path)['head'])
+    if key is not None:
+        event['signature'] = sign(event, key)
     replay(events + [event])
     data = (json.dumps(event, ensure_ascii=False, allow_nan=False, separators=(',', ':')) + '\n').encode('utf-8')
     descriptor = os.open(str(path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
@@ -211,7 +302,8 @@ def record_request(log, request, root, now=None):
 
 
 def record_decision(log, request_id, decision, actor, occurred_at, evidence_ref, reason,
-                    previous_event_id, root, actor_role=None, now=None):
+                    previous_event_id, root, actor_role=None, now=None, key=None):
+    """key: bytes from load_key(). Unsigned decisions are recorded but never accepted for execution."""
     if decision not in DECISIONS:
         raise CheckError('Unknown human decision')
     with _writer(log) as path:
@@ -229,7 +321,7 @@ def record_decision(log, request_id, decision, actor, occurred_at, evidence_ref,
         # Read-only hash check is repeated immediately before recording approval.
         if decision == 'approved':
             verify_file(root, request)
-        return _append(path, events, event)
+        return _append(path, events, event, key)
 
 
 def summarize(log, now=None, max_bytes=None):
@@ -248,6 +340,7 @@ def summarize(log, now=None, max_bytes=None):
                'recorded_at': event['recorded_at'], 'reason': event['reason']}
         if 'actor_role' in event:
             row['actor_role'] = event['actor_role']
+        row['signed'] = 'signature' in event
         if status == 'approved':
             row['action_approval_candidate'] = action_approval(request, event)
         result.append(row)
@@ -264,10 +357,17 @@ def main():
     decide.add_argument('--decision', type=Path, required=True,
                         help='Human decision captured by a trusted harness; never inferred from model output')
     decide.add_argument('--root', type=Path, required=True)
+    decide.add_argument('--unsigned', action='store_true',
+                        help='Record without signature (documentation only; executors reject it)')
     sub.add_parser('status')
-    sub.add_parser('check')
-    for command in sub.choices.values():
-        command.add_argument('--log', type=Path, required=True)
+    check_parser = sub.add_parser('check')
+    check_parser.add_argument('--expect', help='Checkpoint EVENTS:HEAD from an earlier "checkpoint" run')
+    sub.add_parser('checkpoint')
+    generate = sub.add_parser('keygen', help='Create a signing key outside the suite, for the approving harness only')
+    generate.add_argument('--out', type=Path, required=True)
+    for name, command in sub.choices.items():
+        if name != 'keygen':
+            command.add_argument('--log', type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.command == 'request':
@@ -277,11 +377,20 @@ def main():
             if not isinstance(data, dict) or set(data) - {'request_id', 'decision', 'actor', 'actor_role',
                     'occurred_at', 'evidence_ref', 'reason', 'previous_event_id'}:
                 raise CheckError('Invalid decision input fields')
-            result = record_decision(args.log, root=args.root, **data)
+            key = None if args.unsigned else load_key(root=args.root)
+            result = record_decision(args.log, root=args.root, key=key, **data)
         elif args.command == 'status':
             result = summarize(args.log)
+        elif args.command == 'keygen':
+            result = keygen(args.out)
+        elif args.command == 'checkpoint':
+            read_events(args.log)
+            result = chain_head(args.log)
         else:
             result = {'events': len(read_events(args.log)), 'structural_check': 'pass'}
+            if args.expect:
+                count, _, head = args.expect.partition(':')
+                result.update(verify_checkpoint(args.log, int(count), head))
         print(json.dumps(result, ensure_ascii=False, indent=2))
     except (CheckError, OSError, ValueError, TypeError) as exc:
         print('APPROVAL_AUDIT_BLOCKED:', str(exc), file=sys.stderr)

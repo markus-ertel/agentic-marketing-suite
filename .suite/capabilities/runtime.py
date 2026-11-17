@@ -11,7 +11,7 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from validate_records import check
-from approval_audit import CheckError, parse_json, read_events, replay, summarize, verify_file
+from approval_audit import CheckError, load_key, parse_json, read_events, replay, summarize, verify_file, verify_signature
 
 
 class CapabilityError(ValueError):
@@ -86,6 +86,8 @@ def require_approval(log, request_id, root, plan_path, action, target, expected_
     row = next(row for row in summarize(log) if row['request_id'] == request_id)
     if row['status'] != 'approved' or event['type'] != 'approved':
         raise CapabilityError('Approval is absent, revoked or expired')
+    # Only a decision signed by the approving harness counts; an agent without the key cannot forge one.
+    verify_signature(event, load_key(root=root))
     actual = Path(plan_path).resolve(strict=True)
     expected = relative_file(root, request['artifact']['path'])
     if actual != expected or request['action'] != action or request['target'] != target:

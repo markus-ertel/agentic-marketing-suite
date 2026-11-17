@@ -37,7 +37,15 @@ Das Werkzeug erzeugt eine exklusive Sidecar-Sperre, validiert vor jedem Anhänge
 
 **Vertrauensgrenze:** Das ist ein append-only arbeitendes Hilfswerkzeug, kein manipulationssicherer Speicher und kein Identitätsnachweis. Wer Schreibrechte auf die Dateien hat, könnte sie außerhalb des Werkzeugs ändern, vollständig zurücksetzen oder entfernen. Der Harness verantwortet vertrauenswürdige Erfassung, Zugriffsrechte, geschützte Backups und gegebenenfalls extern gesicherte Prüfpunkte. Eine plausibel aussehende Zeichenfolge in `actor` oder `evidence_ref` authentifiziert niemanden. Keine Geheimnisse, vollständigen Kundennachrichten oder unnötigen personenbezogenen Daten ins Protokoll kopieren. Aufbewahrung, Löschrechte und Sperrkonzepte organisatorisch festlegen; „nicht überschreiben“ ist kein unbegrenztes personenbezogenes Archiv.
 
-**Ohne getrennten Harness keine Kontrolle:** Läuft der Agent unter demselben Betriebssystembenutzer wie Protokoll, Adapter und Zugangsdaten, kann er technisch eine Entscheidung eintragen und ausführen. Die Freigabe ist dann eine Dokumentationshilfe, keine Sicherung gegen den Agenten. Mindestens: Agenten `approval_audit.py decide` und `--harness-authorized` per Harness-Regel verbieten (für Claude Code in `.claude/settings.json` mitgeliefert) und Adapter-Zugangsdaten nicht in die Agentenumgebung geben (das Dashboard filtert sie). Wirksam wird die Trennung erst, wenn Entscheidungen über einen separaten Benutzer oder Dienst erfasst werden, auf den der Agent keinen Schreibzugriff hat, und nur ein getrennter Ausführer die Zugangsdaten hält.
+**Signierte Entscheidungen und Hash-Kette:** Jede neue Zeile enthält `prev_hash`, den SHA-256 der vorherigen Zeile; jede nachträgliche Änderung früherer Einträge bricht die Kette. Entscheidungen werden mit einem HMAC-Schlüssel des freigebenden Harness signiert (`signature`). `require_approval` und damit alle Adapter und Exporte akzeptieren **nur signierte** Freigaben, deren Schlüssel über `SUITE_APPROVAL_KEY_FILE` erreichbar ist und **außerhalb** des Suite-Ordners liegt. Unsignierte Entscheidungen (`decide --unsigned`) bleiben reine Dokumentation.
+
+**Wirksam nur mit getrennten Rechten:** Der Schlüssel schützt nur, wenn der KI-Agent ihn nicht lesen kann. Empfohlen:
+1. Einen eigenen Betriebssystembenutzer (z. B. `suite-approver`) für Entscheidungen und Ausführung anlegen. Nur dieser erzeugt den Schlüssel: `approval_audit.py keygen --out ~suite-approver/.suite-approval.key` (Dateirechte 0600).
+2. Der Agent läuft unter dem normalen Benutzer ohne Leserecht auf diese Datei. Das Dashboard gibt Variablen auf `_KEY_FILE` ohnehin nicht an Agenten weiter.
+3. `decide` und die Adapteraufrufe mit `--harness-authorized` laufen ausschließlich als `suite-approver`, z. B. über `sudo -u suite-approver`, mit gesetztem `SUITE_APPROVAL_KEY_FILE`.
+4. Nach jeder Entscheidung `approval_audit.py checkpoint` ausführen und das Ergebnis außerhalb der Suite ablegen (z. B. Passwortmanager, Ticket). `check --expect EVENTS:HEAD` erkennt später entfernte oder umgeschriebene Einträge.
+
+Läuft alles unter einem Benutzer, kann der Agent den Schlüssel lesen; dann bleibt die Freigabe eine Dokumentationshilfe. Der HMAC-Schlüssel authentifiziert den Harness, nicht die Person: wer entschieden hat, belegt weiterhin `evidence_ref`.
 
 ## Verwendung
 
@@ -54,8 +62,14 @@ python3 .suite/tools/approval_audit.py decide \
   --decision /privater/pfad/decision.json \
   --root /pfad/zur/suite --log /privater/pfad/approvals.jsonl
 
-# Read-only: vollständige Struktur/Kette prüfen bzw. Status ableiten.
+# Einmalig, als freigebender Benutzer: Signaturschlüssel außerhalb der Suite erzeugen.
+python3 .suite/tools/approval_audit.py keygen --out /privat/approver/.suite-approval.key
+export SUITE_APPROVAL_KEY_FILE=/privat/approver/.suite-approval.key
+
+# Read-only: vollständige Struktur/Kette prüfen bzw. Status ableiten; Prüfpunkt extern sichern.
 python3 .suite/tools/approval_audit.py check --log /privater/pfad/approvals.jsonl
+python3 .suite/tools/approval_audit.py checkpoint --log /privater/pfad/approvals.jsonl
+python3 .suite/tools/approval_audit.py check --log /privater/pfad/approvals.jsonl --expect 12:<head>
 python3 .suite/tools/approval_audit.py status --log /privater/pfad/approvals.jsonl
 ```
 

@@ -40,6 +40,9 @@ class IMAP:
 
 class MailAdapterTests(unittest.TestCase):
     def setUp(self):
+        sys.path.insert(0,str(ROOT/'.suite/tests'))
+        from approval_key import use_test_key
+        use_test_key(self)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.account={'id':'account-one','credential_ref':'MAIL_ONE','username':'owner','from':'owner@example.invalid','imap':{'host':'imap.example.invalid','port':993},'smtp':{'host':'smtp.example.invalid','port':587,'tls':'starttls'},'allowed_mailboxes':['INBOX'],'draft_mailbox':'Drafts','read_enabled':True}
         self.message={'to':['visitor@example.invalid'],'subject':'Individuelle Antwort','body':'Fiktiver Testentwurf.','purpose':'service','contact_id':'contact-demo','legal_basis_evidence_ref':'fixture:service-request'}

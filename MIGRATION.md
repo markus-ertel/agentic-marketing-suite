@@ -133,4 +133,6 @@ Ein technisches `complete` ist kein fertiges Fachurteil. Der Harness ergänzt ei
 - **noCRM-Entwurfsschema:** `draft.schema.json` enthält jetzt die von `preflight.py` geprüften Felder `context_verified`, `within_24h`, `template_approved`, `escalation_route_confirmed`, `recipient_initiated`, `direct_ai_interaction` und `ai_disclosure_confirmed` (jeweils boolesch).
 - **Artefaktpfade:** `~`, Steuerzeichen und Laufwerksbuchstaben werden abgelehnt.
 - **Linkprüfung:** Links, die aus dem Repository hinausführen, sind Fehler und werden nicht mehr auf dem Prüfrechner nachgeschlagen.
+- **Signierte Freigaben (Breaking):** Adapter und Exporte führen nur noch Freigaben aus, die mit dem Schlüssel aus `SUITE_APPROVAL_KEY_FILE` signiert sind. Schlüssel mit `approval_audit.py keygen` außerhalb der Suite erzeugen, möglichst unter einem eigenen Betriebssystembenutzer (siehe `.suite/APPROVALS.md`). Bereits erfasste, unsignierte Freigaben gelten nicht mehr als Ausführungserlaubnis; die Anforderung neu entscheiden lassen.
+- **Hash-Kette:** Neue Einträge in `approvals.jsonl` verweisen per `prev_hash` auf die vorherige Zeile. Ältere Protokolle bleiben lesbar; ab dem ersten verketteten Eintrag muss jede weitere Zeile verkettet sein. `checkpoint` und `check --expect` erkennen entfernte Einträge.
 

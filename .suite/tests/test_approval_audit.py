@@ -21,6 +21,9 @@ T = datetime(2026, 10, 27, 9, 0, tzinfo=timezone.utc)
 
 class ApprovalAuditTests(unittest.TestCase):
     def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from approval_key import use_test_key
+        self.key = use_test_key(self)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
@@ -271,6 +274,7 @@ class ApprovalAuditTests(unittest.TestCase):
         result = subprocess.run(command + ['decide', '--decision', str(decision_file), '--root', str(self.root),
                                 '--log', str(self.log)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('signature', json.loads(result.stdout))
         before = self.log.read_bytes()
         result = subprocess.run(command + ['status', '--log', str(self.log)], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -278,6 +282,53 @@ class ApprovalAuditTests(unittest.TestCase):
         self.assertEqual(self.log.read_bytes(), before)
         result = subprocess.run(command + ['check', '--log', str(self.log)], capture_output=True, text=True)
         self.assertEqual(json.loads(result.stdout)['events'], 2)
+        head = json.loads(subprocess.run(command + ['checkpoint', '--log', str(self.log)], capture_output=True, text=True).stdout)
+        result = subprocess.run(command + ['check', '--log', str(self.log), '--expect', '%d:%s' % (head['events'], head['head'])],
+                                capture_output=True, text=True)
+        self.assertEqual(json.loads(result.stdout)['checkpoint'], 'pass')
+        key_out = Path(tempfile.mkdtemp()) / 'new.key'
+        self.addCleanup(lambda: key_out.unlink(missing_ok=True))
+        created = json.loads(subprocess.run(command + ['keygen', '--out', str(key_out)], capture_output=True, text=True).stdout)
+        self.assertEqual(oct(key_out.stat().st_mode & 0o777), '0o600'); self.assertEqual(len(created['key_id']), 16)
+        self.assertNotEqual(subprocess.run(command + ['keygen', '--out', str(key_out)], capture_output=True, text=True).returncode, 0)
+
+    def test_hash_chain_detects_edits_and_checkpoint_detects_truncation(self):
+        from approval_audit import chain_head, verify_checkpoint
+        request = copy.deepcopy(self.request)
+        first = record_request(self.log, request, self.root)
+        checkpoint = chain_head(self.log)
+        record_decision(self.log, request['id'], 'denied', 'Erika Beispiel', request['requested_at'],
+                        'trusted-harness:fictional', 'Fiktiv abgelehnt', first['id'], self.root, key=self.key)
+        self.assertEqual(len(read_events(self.log)), 2)
+        self.assertEqual(verify_checkpoint(self.log, checkpoint['events'], checkpoint['head'])['checkpoint'], 'pass')
+        original = self.log.read_bytes()
+        lines = original.split(b'\n')
+        # Changing an earlier record breaks the link of the next one.
+        self.log.write_bytes(lines[0].replace(b'"reason":"', b'"reason":"X') + b'\n' + b'\n'.join(lines[1:]))
+        with self.assertRaises(CheckError):
+            read_events(self.log)
+        # Dropping the last record keeps a valid chain, but an external checkpoint notices.
+        self.log.write_bytes(original)
+        later = chain_head(self.log)
+        self.log.write_bytes(lines[0] + b'\n')
+        read_events(self.log)
+        with self.assertRaises(CheckError):
+            verify_checkpoint(self.log, later['events'], later['head'])
+
+    def test_legacy_unchained_records_still_read_but_chain_cannot_be_dropped(self):
+        request = copy.deepcopy(self.request)
+        event = record_request(self.log, request, self.root)
+        legacy = dict(event); legacy.pop('prev_hash')
+        self.log.write_text(json.dumps(legacy, ensure_ascii=False, separators=(',', ':')) + '\n')
+        record_decision(self.log, request['id'], 'denied', 'Erika Beispiel', request['requested_at'],
+                        'trusted-harness:fictional', 'Fiktiv', event['id'], self.root, key=self.key)
+        self.assertEqual(len(read_events(self.log)), 2)
+        data = self.log.read_bytes().split(b'\n')
+        second = json.loads(data[1]); second.pop('prev_hash')
+        third = dict(second, id='evt-' + 'f' * 8)
+        with self.assertRaises(CheckError):
+            self.log.write_bytes(data[0] + b'\n' + data[1] + b'\n' + json.dumps(third).encode() + b'\n')
+            read_events(self.log)
 
     def test_strict_json_and_symlink_log(self):
         for text in ('{"x":1,"x":2}', '{"x":NaN}'):

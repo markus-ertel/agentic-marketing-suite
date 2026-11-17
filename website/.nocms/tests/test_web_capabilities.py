@@ -19,6 +19,9 @@ sftp=load('publisher','website/.nocms/integrationen/sftp/publisher.py')
 
 class WebCapabilityTests(unittest.TestCase):
     def setUp(self):
+        sys.path.insert(0,str(ROOT/'.suite/tests'))
+        from approval_key import use_test_key
+        use_test_key(self)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.site=self.root/'site';self.site.mkdir();(self.site/'index.html').write_text('<title>Start</title><h1>Grüße</h1><script>SECRET_SCRIPT</script>')
         self.config=dict(type='sftp',source='site',target='/public_html',host='example.invalid',port=22,username='web',credential_ref='WEB',delete_remote=False,verify_upload=True,release_archive='release.zip')
