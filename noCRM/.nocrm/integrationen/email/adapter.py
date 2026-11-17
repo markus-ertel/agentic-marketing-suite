@@ -8,6 +8,7 @@ from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import format_datetime, make_msgid
 import imaplib
+import hashlib
 import json
 import mimetypes
 import os
@@ -19,7 +20,11 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / '.suite/capabilities'))
 from runtime import (CapabilityError, CheckError, clean_string, digest, load_json, relative_file,
-                     require_approval, run_once, snapshot_json, write_json, write_new)
+                     bound_execution_log, require_approval, run_once, snapshot_json, write_json, write_new)
+from private_files import is_private
+from execution_authority import require_execution_authority
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+from preflight import marketing_consent, parse_csv
 
 MAX_MESSAGE = 10 * 1024 * 1024
 
@@ -83,7 +88,38 @@ def new_output(root, relative):
     return path
 
 
-def prepare(root, account, spec, message_path, plan_path, mode='send'):
+def check_consent(root, consent, contact_id, recipients, now=None):
+    """Marketing mail needs a current, documented email consent of exactly this contact at send time."""
+    if not isinstance(consent, dict) or set(consent) != {'contacts_path', 'consents_path', 'evidence_ref', 'contacts_sha256', 'consents_sha256'}:
+        raise CapabilityError('Marketing mail needs contacts and consents files')
+    documents = {}
+    for name in ('contacts', 'consents'):
+        with relative_file(root, consent[name + '_path']).open('rb') as stream:
+            data = stream.read(5 * 1024 * 1024 + 1)
+        if len(data) > 5 * 1024 * 1024 or hashlib.sha256(data).hexdigest() != consent[name + '_sha256']:
+            raise CapabilityError('Marketing evidence changed; prepare and approve again')
+        documents[name] = data.decode('utf-8-sig')
+    contacts = parse_csv(documents['contacts'], {'contact_id', 'email'})
+    consents = parse_csv(documents['consents'], {'contact_id', 'channel', 'purpose', 'status', 'recorded_at', 'evidence_ref', 'basis'})
+    match = [c for c in contacts if c.get('contact_id', '').strip() == contact_id]
+    if len(match) != 1 or recipients != [match[0].get('email', '').strip()]:
+        raise CapabilityError('Marketing mail goes to exactly the consenting contact address')
+    problems, valid = marketing_consent(consents, contact_id, 'email', now or datetime.now(timezone.utc))
+    if problems:
+        raise CapabilityError('Marketing consent check failed: ' + '; '.join(problems))
+    if consent['evidence_ref'] and consent['evidence_ref'] not in {c['evidence_ref'] for c in valid}:
+        raise CapabilityError('Reviewed consent evidence is no longer valid')
+    return sorted(c['evidence_ref'] for c in valid)[0]
+
+
+def attachment_list(data):
+    parsed = BytesParser(policy=policy.default).parsebytes(data)
+    return [{'filename': part.get_filename() or '', 'size': len(part.get_payload(decode=True) or b''),
+             'sha256': hashlib.sha256(part.get_payload(decode=True) or b'').hexdigest()}
+            for part in parsed.walk() if part.get_content_disposition() == 'attachment']
+
+
+def prepare(root, account, spec, message_path, plan_path, mode='send', contacts=None, consents=None):
     validate_account(account)
     if not isinstance(spec, dict) or not {'to', 'subject', 'body', 'purpose', 'contact_id', 'legal_basis_evidence_ref'} <= spec.keys():
         raise CapabilityError('Message, contact, purpose and legal evidence are required')
@@ -125,19 +161,36 @@ def prepare(root, account, spec, message_path, plan_path, mode='send'):
         if not isinstance(item, dict) or set(item) != {'path'}:
             raise CapabilityError('Attachments reference explicit local paths only')
         path = relative_file(root, item['path'])
+        resolved_parts = path.relative_to(Path(root).resolve()).parts
+        if any(is_private(part, export=True) for part in (*item['path'].split('/'), *resolved_parts)):
+            raise CapabilityError('Credentials, keys and private logs must not be attached')
+        if Path(item['path']).parts[0] != 'attachments':
+            raise CapabilityError('Copy reviewed attachments into attachments/ under the workspace root')
         if path.stat().st_size > 5 * 1024 * 1024:
             raise CapabilityError('Attachment exceeds 5 MiB')
         mime = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
         major, minor = mime.split('/', 1)
-        message.add_attachment(path.read_bytes(), maintype=major, subtype=minor, filename=path.name)
+        with path.open('rb') as stream:
+            payload = stream.read(5 * 1024 * 1024 + 1)
+        if len(payload) > 5 * 1024 * 1024:
+            raise CapabilityError('Attachment exceeds 5 MiB')
+        message.add_attachment(payload, maintype=major, subtype=minor, filename=path.name)
     data = message.as_bytes()
     if len(data) > MAX_MESSAGE:
         raise CapabilityError('Message exceeds 10 MiB')
+    consent = None
+    if spec['purpose'] == 'marketing':
+        consent = {'contacts_path': contacts, 'consents_path': consents, 'evidence_ref': '',
+                   'contacts_sha256': digest(relative_file(root, contacts)),
+                   'consents_sha256': digest(relative_file(root, consents))}
+        consent['evidence_ref'] = check_consent(root, consent, spec['contact_id'],
+                                                recipients)
     eml, output = new_output(root, message_path), new_output(root, plan_path)
     if eml == output:
         raise CapabilityError('Message and plan must be separate files')
-    import hashlib
-    value = {'capability': 'mail.send' if mode == 'send' else 'mail.save_draft', 'version': '0.1',
+    value = {'capability': 'mail.send' if mode == 'send' else 'mail.save_draft', 'version': '0.3',
+             # The approver sees exactly which files leave the house, and under which consent.
+             'attachments': [dict(row, path=item['path']) for row, item in zip(attachment_list(data), attachments)], 'consent': consent,
              'account': account, 'message_path': message_path, 'message_sha256': hashlib.sha256(data).hexdigest(),
              'envelope_from': account['from'], 'envelope_to': recipients, 'purpose': spec['purpose'],
              'contact_id': spec['contact_id'], 'legal_basis_evidence_ref': spec['legal_basis_evidence_ref'],
@@ -149,8 +202,8 @@ def prepare(root, account, spec, message_path, plan_path, mode='send'):
 
 def validate_plan(root, value):
     expected = {'capability', 'version', 'account', 'message_path', 'message_sha256', 'envelope_from', 'envelope_to',
-                'purpose', 'contact_id', 'legal_basis_evidence_ref', 'action', 'target'}
-    if not isinstance(value, dict) or set(value) != expected or value['version'] != '0.1':
+                'purpose', 'contact_id', 'legal_basis_evidence_ref', 'action', 'target', 'attachments', 'consent'}
+    if not isinstance(value, dict) or set(value) != expected or value['version'] != '0.3':
         raise CapabilityError('Invalid mail plan')
     for field in ('contact_id', 'legal_basis_evidence_ref'):clean_string(value[field], field)
     if value['purpose'] not in ('service','personal','marketing','transactional'):raise CapabilityError('Invalid purpose')
@@ -167,8 +220,25 @@ def validate_plan(root, value):
     path = relative_file(root, value['message_path'])
     if path.stat().st_size > MAX_MESSAGE or digest(path) != value['message_sha256']:
         raise CapabilityError('Message changed since review')
-    data = path.read_bytes()
-    import hashlib
+    with path.open('rb') as stream:
+        data = stream.read(MAX_MESSAGE + 1)
+    if len(data) > MAX_MESSAGE:
+        raise CapabilityError('Message exceeds 10 MiB')
+    inventory = value['attachments']
+    if not isinstance(inventory, list) or any(not isinstance(item, dict) or set(item) != {'path', 'filename', 'size', 'sha256'} for item in inventory):
+        raise CapabilityError('Invalid reviewed attachment inventory')
+    if any(not isinstance(item['path'], str) or not item['path'].startswith('attachments/')
+           or '..' in Path(item['path']).parts or any(is_private(part, export=True) for part in Path(item['path']).parts) for item in inventory):
+        raise CapabilityError('Invalid reviewed attachment path')
+    if attachment_list(data) != [{k:v for k,v in item.items() if k != 'path'} for item in inventory]:
+        raise CapabilityError('Attachments differ from the reviewed plan')
+    if value['purpose'] == 'marketing':
+        # Re-checked immediately before sending: a revocation after review blocks the send.
+        if not isinstance(value['consent'], dict) or not value['consent'].get('evidence_ref'):
+            raise CapabilityError('Marketing consent evidence is required')
+        check_consent(root, value['consent'], value['contact_id'], value['envelope_to'])
+    elif value['consent'] is not None:
+        raise CapabilityError('Consent block only for marketing mail')
     if hashlib.sha256(data).hexdigest() != value['message_sha256']:
         raise CapabilityError('Message changed during read')
     message = BytesParser(policy=policy.default).parsebytes(data)
@@ -235,7 +305,7 @@ def read_mail(account, mailbox, limit=20, imap_factory=imaplib.IMAP4_SSL, search
         validity = next((value.decode() for value in validity_response if isinstance(value, bytes) and value.isdigit()), 'unknown')
         if not isinstance(search, str) or len(search) > 200 or any(ord(char)<32 for char in search) or not search.isascii():
             raise CapabilityError('Search must be bounded ASCII text')
-        query = '"' + search.replace('\\', '\\\\').replace('"', '\"') + '"'
+        query = '"' + search.replace('\\', '\\\\').replace('"', '\\"') + '"'
         status, data = client.uid('search', None, 'OR', 'SUBJECT', query, 'FROM', query) if search else client.uid('search', None, 'ALL')
         if status != 'OK':raise CapabilityError('Mailbox search failed')
         for uid in data[0].split()[-limit:]:
@@ -302,6 +372,8 @@ def main():
     draft = sub.add_parser('prepare')
     for field in ('account', 'input', 'message-output', 'plan-output'):draft.add_argument('--' + field, required=True)
     draft.add_argument('--mode', choices=('send', 'draft'), default='send')
+    draft.add_argument('--contacts', help='Root-relative contacts.csv; required for marketing')
+    draft.add_argument('--consents', help='Root-relative consents.csv; required for marketing')
     read = sub.add_parser('read')
     for field in ('account', 'mailbox', 'authorization-ref', 'execution-log', 'key', 'output'):read.add_argument('--' + field, required=True)
     read.add_argument('--limit', type=int, default=20)
@@ -321,7 +393,7 @@ def main():
         elif args.command == 'import-contact':
             result = import_contact(args.root,args.input,args.output)
         elif args.command == 'prepare':
-            value = prepare(args.root, validate_account(load_json(args.account)), load_json(args.input), args.message_output, args.plan_output, args.mode)
+            value = prepare(args.root, validate_account(load_json(args.account)), load_json(args.input), args.message_output, args.plan_output, args.mode, args.contacts, args.consents)
             result = {'status': 'planned', 'target': value['target'], 'action': value['action']}
         elif args.command == 'read':
             if not args.harness_authorized:raise CapabilityError('Explicit authorized read required')
@@ -345,9 +417,13 @@ def main():
         else:
             if not args.harness_authorized:raise CapabilityError('Harness authority attestation required')
             value, loaded_hash = snapshot_json(args.plan);data = validate_plan(args.root, value)
-            gate = lambda: require_approval(args.approvals, args.request_id, args.root, args.plan, value['action'], value['target'], loaded_hash)
+            def gate():
+                authority = require_execution_authority(args.approvals, args.execution_log, value['capability'])
+                validate_plan(args.root, value)
+                return require_approval(args.approvals, args.request_id, args.root, args.plan, value['action'], value['target'], loaded_hash,
+                                        key_path=authority['approval_key_file'])
             approval = gate()
-            result = run_once(args.execution_log, args.key, value['capability'], approval, lambda: execute_transport(value, data, revalidate=gate))
+            result = run_once(bound_execution_log(args.approvals, args.execution_log), args.key, value['capability'], approval, lambda: execute_transport(value, data, revalidate=gate))
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0 if result['status'] in ('planned', 'accepted', 'confirmed', 'local_file_created') else 2
     except (CapabilityError, CheckError, OSError, ValueError, KeyError, TypeError, imaplib.IMAP4.error):
