@@ -40,6 +40,9 @@ class IMAP:
 
 class MailAdapterTests(unittest.TestCase):
     def setUp(self):
+        sys.path.insert(0,str(ROOT/'.suite/tests'))
+        from approval_key import use_test_key
+        use_test_key(self)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup);self.root=Path(self.tmp.name)
         self.account={'id':'account-one','credential_ref':'MAIL_ONE','username':'owner','from':'owner@example.invalid','imap':{'host':'imap.example.invalid','port':993},'smtp':{'host':'smtp.example.invalid','port':587,'tls':'starttls'},'allowed_mailboxes':['INBOX'],'draft_mailbox':'Drafts','read_enabled':True}
         self.message={'to':['visitor@example.invalid'],'subject':'Individuelle Antwort','body':'Fiktiver Testentwurf.','purpose':'service','contact_id':'contact-demo','legal_basis_evidence_ref':'fixture:service-request'}
@@ -75,13 +78,78 @@ class MailAdapterTests(unittest.TestCase):
         self.assertTrue(client.readonly);self.assertEqual(messages[0]['thread_ref'],'<old@example.invalid>')
         self.assertEqual(messages[0]['uidvalidity'],'7');self.assertIn(('fetch',(b'12','(BODY.PEEK[])')),client.commands)
         self.assertIn('OR',client.commands[0][1]);self.assertIn('untrusted',messages[0]['trust'])
+    def test_imap_search_quotes_are_escaped(self):
+        client=IMAP(ssl_context=__import__('ssl').create_default_context())
+        with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}):
+            mail.read_mail(self.account,'INBOX',imap_factory=lambda *a,**k:client,search='x" ALL "')
+        criteria=client.commands[0][1]
+        self.assertIn('"x\\" ALL \\""',criteria);self.assertNotIn('"x" ALL ""',criteria)
+    def test_private_files_cannot_be_attached(self):
+        for name in ('.env','token.json','client_secret_web.json','id_ed25519','approvals.jsonl','dump.sql','sub/secrets.json'):
+            path=self.root/name;path.parent.mkdir(exist_ok=True);path.write_text('fictional-secret')
+            self.message['attachments']=[{'path':name}]
+            with self.subTest(name=name),self.assertRaises(mail.CapabilityError):self.prepare()
+    def marketing_files(self,status='granted'):
+        (self.root/'contacts.csv').write_text('contact_id,display_name,email,phone\ncontact-demo,Erika Beispiel,visitor@example.invalid,\n')
+        (self.root/'consents.csv').write_text('contact_id,channel,purpose,status,recorded_at,evidence_ref,basis,valid_until,notes\n'
+            'contact-demo,email,marketing,%s,2026-01-01T00:00:00+00:00,fixture:double-opt-in,consent,,\n'%status)
+        self.message.update(purpose='marketing',legal_basis_evidence_ref='fixture:double-opt-in')
+    def test_marketing_requires_documented_consent_at_prepare_and_send(self):
+        self.marketing_files()
+        with self.assertRaises(mail.CapabilityError):self.prepare()
+        self.assertFalse((self.root/'draft.eml').exists())
+        value=self.prepare(contacts='contacts.csv',consents='consents.csv')
+        self.assertEqual(value['consent']['evidence_ref'],'fixture:double-opt-in')
+        mail.validate_plan(self.root,value)
+        # A revocation after review blocks the send.
+        self.marketing_files(status='revoked')
+        with self.assertRaises(mail.CapabilityError):mail.validate_plan(self.root,value)
+    def test_marketing_without_consent_or_to_other_address_is_blocked(self):
+        self.marketing_files(status='denied')
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+
+        self.marketing_files();self.message['to']=['someone-else@example.invalid']
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+        self.message['to']=['visitor@example.invalid'];self.message['bcc']=['extra@example.invalid']
+        with self.assertRaises(mail.CapabilityError):self.prepare(contacts='contacts.csv',consents='consents.csv')
+
+    def test_marketing_revocation_during_login_blocks_the_actual_send(self):
+        import contextlib,io
+        from test_capability_runtime import approve
+        self.marketing_files();value=self.prepare(contacts='contacts.csv',consents='consents.csv')
+        log,plan,request,event=approve(self.root,value,'send',value['target']);client=SMTP()
+        client.login=lambda *a:self.marketing_files(status='revoked')
+        original=mail.execute_transport
+        def transport(value,data,revalidate):return original(value,data,smtp_starttls=lambda *a,**k:client,revalidate=revalidate)
+        arguments=['adapter.py','--root',str(self.root),'execute','--plan',str(plan),'--approvals',str(log),
+                   '--request-id',request['id'],'--execution-log',str(self.root/'executions.jsonl'),'--key','revoked','--harness-authorized']
+        with patch.object(mail,'require_execution_authority',return_value={'approval_key_file':os.environ['SUITE_APPROVAL_KEY_FILE']}),patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}),patch.object(mail,'execute_transport',side_effect=transport),patch.object(sys,'argv',arguments),contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(mail.main(),2)
+        self.assertEqual(client.sent,[])
+
+    def test_agent_cannot_execute_without_a_provisioned_boundary(self):
+        import contextlib,io
+        from test_capability_runtime import approve
+        value=self.prepare();log,plan,request,event=approve(self.root,value,'send',value['target'])
+        arguments=['adapter.py','--root',str(self.root),'execute','--plan',str(plan),'--approvals',str(log),
+                   '--request-id',request['id'],'--execution-log',str(self.root/'executions.jsonl'),'--key','forged','--harness-authorized']
+        with patch.object(mail,'require_execution_authority',side_effect=ValueError('unprovisioned')),patch.object(mail,'execute_transport') as transport,patch.object(sys,'argv',arguments),contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(mail.main(),2)
+            transport.assert_not_called()
+    def test_plan_lists_attachments_with_hashes(self):
+        import hashlib
+        (self.root/'attachments').mkdir();(self.root/'attachments/offer.pdf').write_bytes(b'%PDF fictional');self.message['attachments']=[{'path':'attachments/offer.pdf'}]
+        value=self.prepare()
+        self.assertEqual(value['attachments'],[{'path':'attachments/offer.pdf','filename':'offer.pdf','size':14,'sha256':hashlib.sha256(b'%PDF fictional').hexdigest()}])
+        changed=dict(value,attachments=[])
+        with self.assertRaises(mail.CapabilityError):mail.validate_plan(self.root,changed)
     def test_draft_append_is_separate_from_send(self):
         value=self.prepare(mode='draft');client=IMAP(ssl_context=__import__('ssl').create_default_context())
         with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}):
             result=mail.execute_transport(value,mail.validate_plan(self.root,value),imap_factory=lambda *a,**k:client,revalidate=lambda:None)
         self.assertEqual(result['status'],'accepted');self.assertEqual(len(client.appended),1);self.assertEqual(value['action'],'modify_external')
     def test_attachments_are_frozen_and_extracted_only_to_explicit_local_paths(self):
-        (self.root/'proof.txt').write_text('Fiktiver Anhang');self.message['attachments']=[{'path':'proof.txt'}]
+        (self.root/'attachments').mkdir();(self.root/'attachments/proof.txt').write_text('Fiktiver Anhang');self.message['attachments']=[{'path':'attachments/proof.txt'}]
         value=self.prepare();parsed=mail.BytesParser(policy=mail.policy.default).parsebytes(mail.validate_plan(self.root,value))
         part=next(index for index,item in enumerate(parsed.walk()) if item.get_content_disposition()=='attachment')
         mail.extract_attachment(self.root,'draft.eml',part,'saved.txt')
@@ -118,7 +186,7 @@ class MailAdapterTests(unittest.TestCase):
         original=mail.execute_transport
         def transport(value,data,revalidate):return original(value,data,smtp_starttls=lambda *a,**k:client,revalidate=revalidate)
         arguments=['adapter.py','--root',str(self.root),'execute','--plan',str(plan),'--approvals',str(log),'--request-id',request['id'],'--execution-log',str(self.root/'executions.jsonl'),'--key','send-once','--harness-authorized']
-        with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}),patch.object(mail,'execute_transport',side_effect=transport),patch.object(sys,'argv',arguments):
+        with patch.object(mail,'require_execution_authority',return_value={'approval_key_file':os.environ['SUITE_APPROVAL_KEY_FILE']}),patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}),patch.object(mail,'execute_transport',side_effect=transport),patch.object(sys,'argv',arguments):
             for attempt in range(2):
                 output=io.StringIO()
                 with contextlib.redirect_stdout(output):self.assertEqual(mail.main(),0)
