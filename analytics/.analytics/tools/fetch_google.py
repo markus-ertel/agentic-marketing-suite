@@ -12,6 +12,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import sys
 from urllib import parse, request
 from zoneinfo import ZoneInfo
@@ -21,6 +22,11 @@ GSC_URL = 'https://www.googleapis.com/webmasters/v3/sites/%s/searchAnalytics/que
 # Distinct users are deliberately absent: daily/channel users cannot be added.
 GA4_METRICS = ['sessions', 'engagedSessions', 'keyEvents']
 PAGE = 10000
+
+
+def valid_token_env(name):
+    # Only Google token variables: no other secret of this machine may be sent as a Bearer token.
+    return isinstance(name, str) and re.fullmatch(r'GOOGLE_[A-Z0-9_]+', name) is not None
 
 
 class NoRedirect(request.HTTPRedirectHandler):
@@ -131,6 +137,8 @@ def main(argv=None, post=http_post, today=None):
     parser.add_argument('--time-zone', help='GA4: tatsächliche IANA-Property-Zeitzone erforderlich; GSC: immer America/Los_Angeles')
     parser.add_argument('--token-env', default='GOOGLE_OAUTH_ACCESS_TOKEN')
     args = parser.parse_args(argv)
+    if not valid_token_env(args.token_env):
+        parser.error('--token-env muss mit GOOGLE_ beginnen (z. B. GOOGLE_OAUTH_ACCESS_TOKEN)')
     token = os.environ.get(args.token_env)
     if not token:
         parser.error('Umgebungsvariable %s fehlt (read-only OAuth-Token)' % args.token_env)

@@ -53,9 +53,11 @@ class WebCapabilityTests(unittest.TestCase):
         for field,changed in [('host','-oProxyCommand=evil'),('target','/public\nrm /'),('source','../outside'),('delete_remote',True),('verify_upload',False)]:
             with self.subTest(field=field),self.assertRaises((sftp.CapabilityError,ValueError)):
                 sftp.plan(self.root,dict(self.config,**{field:changed}))
-        secret=self.site/'.env';secret.write_text('secret')
-        with self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
-        secret.unlink();(self.site/'alias').symlink_to(self.site/'index.html')
+        for name in ('.env','credentials.json','secrets.json','token.json','id_rsa','dump.sql','backup.sqlite','service-account.json'):
+            secret=self.site/name;secret.write_text('secret')
+            with self.subTest(name=name),self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
+            secret.unlink()
+        (self.site/'alias').symlink_to(self.site/'index.html')
         with self.assertRaises(sftp.CapabilityError):sftp.plan(self.root,self.config)
     def test_sftp_checks_host_keys_stages_and_verifies_exact_remote_bytes(self):
         value=sftp.plan(self.root,self.config);remote={};commands=[]

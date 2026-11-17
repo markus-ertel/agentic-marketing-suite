@@ -58,6 +58,14 @@ class FetchTests(unittest.TestCase):
         manifest = json.loads(next(out.glob('*.manifest.json')).read_text())
         self.assertEqual(manifest['time_zone'], 'America/Los_Angeles')
 
+    def test_only_google_token_variables_can_be_sent(self):
+        # Any other variable (e.g. a mail password) must never leave the machine as a Bearer token.
+        with mock.patch.dict('os.environ', {'MAIL_ONE_PASSWORD': 'fictional-secret'}, clear=True), self.assertRaises(SystemExit):
+            fetch_google.main(['ga4', '--property', '1', '--out-dir', '.', '--time-zone', 'Europe/Vienna', '--token-env', 'MAIL_ONE_PASSWORD'])
+        self.assertTrue(fetch_google.valid_token_env('GOOGLE_OAUTH_ACCESS_TOKEN'))
+        for name in ('MAIL_ONE_PASSWORD', 'SITE_KEY_FILE', 'GOOGLE_', 'google_x', ''):
+            self.assertFalse(fetch_google.valid_token_env(name), name)
+
     def test_missing_token_is_refused(self):
         with mock.patch.dict('os.environ', {}, clear=True), self.assertRaises(SystemExit):
             fetch_google.main(['ga4', '--property', '1', '--out-dir', '.'])

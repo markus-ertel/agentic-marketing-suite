@@ -75,6 +75,17 @@ class MailAdapterTests(unittest.TestCase):
         self.assertTrue(client.readonly);self.assertEqual(messages[0]['thread_ref'],'<old@example.invalid>')
         self.assertEqual(messages[0]['uidvalidity'],'7');self.assertIn(('fetch',(b'12','(BODY.PEEK[])')),client.commands)
         self.assertIn('OR',client.commands[0][1]);self.assertIn('untrusted',messages[0]['trust'])
+    def test_imap_search_quotes_are_escaped(self):
+        client=IMAP(ssl_context=__import__('ssl').create_default_context())
+        with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}):
+            mail.read_mail(self.account,'INBOX',imap_factory=lambda *a,**k:client,search='x" ALL "')
+        criteria=client.commands[0][1]
+        self.assertIn('"x\\" ALL \\""',criteria);self.assertNotIn('"x" ALL ""',criteria)
+    def test_private_files_cannot_be_attached(self):
+        for name in ('.env','token.json','client_secret_web.json','id_ed25519','approvals.jsonl','dump.sql','sub/secrets.json'):
+            path=self.root/name;path.parent.mkdir(exist_ok=True);path.write_text('fictional-secret')
+            self.message['attachments']=[{'path':name}]
+            with self.subTest(name=name),self.assertRaises(mail.CapabilityError):self.prepare()
     def test_draft_append_is_separate_from_send(self):
         value=self.prepare(mode='draft');client=IMAP(ssl_context=__import__('ssl').create_default_context())
         with patch.dict(os.environ,{'MAIL_ONE_PASSWORD':'fictional-secret'}):

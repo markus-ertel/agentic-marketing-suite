@@ -6,15 +6,15 @@ import json
 import mimetypes
 import re
 from pathlib import Path
+import sys
 from urllib.parse import quote, unquote, urlsplit
+
+# Private names stay hidden even when internal method directories are enabled; shared with the adapters.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'capabilities'))
+from private_files import is_private
 
 MODULES = ('marketing', 'pr', 'social-media', 'website', 'advertising', 'creative', 'noCRM', 'analytics', 'e-commerce', 'branding', 'business-dna', 'help')
 SKIP = {'.git', '__pycache__', 'node_modules', '.venv', 'venv', '.DS_Store'}
-# These names remain private even when internal method directories are enabled.
-PRIVATE_NAMES = {'.git', '.hg', '.svn', '.aws', '.ssh', '.gnupg', '.codex', '.config',
-                 '.netrc', '.npmrc', '.pypirc', 'credentials', 'credentials.json',
-                 'id_rsa', 'id_dsa', 'id_ecdsa', 'id_ed25519'}
-PRIVATE_SUFFIXES = {'.pem', '.key', '.p12', '.pfx', '.keystore', '.jks'}
 TEXT = {'.txt', '.md', '.markdown', '.json', '.jsonl', '.csv', '.tsv', '.log', '.py', '.js', '.ts', '.tsx', '.jsx', '.css', '.html', '.htm', '.xml', '.svg', '.yaml', '.yml', '.toml', '.sh', '.sql', '.ini', '.cfg', '.rst'}
 
 
@@ -30,9 +30,7 @@ class Files:
 
     def _check_parts(self, parts):
         for index, name in enumerate(parts):
-            folded = name.casefold()
-            if (folded in PRIVATE_NAMES or folded.startswith(('.env', 'secrets.'))
-                    or folded == 'secrets' or Path(folded).suffix in PRIVATE_SUFFIXES):
+            if is_private(name):
                 raise PermissionError('Privater Pfad wird nicht ausgeliefert.')
             # The shared suite entry remains accessible. Other dot paths require server opt-in.
             if (name.startswith('.') and name not in ('.', '..')

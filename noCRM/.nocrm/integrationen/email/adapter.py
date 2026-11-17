@@ -20,6 +20,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[4] / '.suite/capabilities'))
 from runtime import (CapabilityError, CheckError, clean_string, digest, load_json, relative_file,
                      bound_execution_log, require_approval, run_once, snapshot_json, write_json, write_new)
+from private_files import is_private
 
 MAX_MESSAGE = 10 * 1024 * 1024
 
@@ -125,6 +126,9 @@ def prepare(root, account, spec, message_path, plan_path, mode='send'):
         if not isinstance(item, dict) or set(item) != {'path'}:
             raise CapabilityError('Attachments reference explicit local paths only')
         path = relative_file(root, item['path'])
+        resolved_parts = path.relative_to(Path(root).resolve()).parts
+        if any(is_private(part, export=True) for part in (*item['path'].split('/'), *resolved_parts)):
+            raise CapabilityError('Credentials, keys and private logs must not be attached')
         if path.stat().st_size > 5 * 1024 * 1024:
             raise CapabilityError('Attachment exceeds 5 MiB')
         mime = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
@@ -235,7 +239,7 @@ def read_mail(account, mailbox, limit=20, imap_factory=imaplib.IMAP4_SSL, search
         validity = next((value.decode() for value in validity_response if isinstance(value, bytes) and value.isdigit()), 'unknown')
         if not isinstance(search, str) or len(search) > 200 or any(ord(char)<32 for char in search) or not search.isascii():
             raise CapabilityError('Search must be bounded ASCII text')
-        query = '"' + search.replace('\\', '\\\\').replace('"', '\"') + '"'
+        query = '"' + search.replace('\\', '\\\\').replace('"', '\\"') + '"'
         status, data = client.uid('search', None, 'OR', 'SUBJECT', query, 'FROM', query) if search else client.uid('search', None, 'ALL')
         if status != 'OK':raise CapabilityError('Mailbox search failed')
         for uid in data[0].split()[-limit:]:
