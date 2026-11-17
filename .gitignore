@@ -23,9 +23,34 @@ htmlcov/
 !.env.example
 *.pem
 *.key
+*.p12
+*.pfx
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+client_secret*.json
+service-account*.json
+service_account*.json
+token.json
+credentials.json
+secrets.json
+.git-credentials
+.pgpass
+.netrc
 .aws/
 .codex/
 .agents/
+
+# Lokale Harness-Konfiguration kann Zugangsdaten enthalten.
+.mcp.json
+.cursor/mcp.json
+.claude/settings.local.json
+
+# Posteingänge, Rohnachrichten und Zustellprotokolle der Adapter und Webmodule
+*.eml
+inbound-*.json
+delivery-events.jsonl
 
 # Lokale Arbeitsdaten; Methoden, Vorlagen und fiktive Beispiele bleiben enthalten.
 **/input/*
@@ -50,6 +75,8 @@ htmlcov/
 # Private Adapter-Ausführungsnachweise
 **/executions.jsonl
 **/executions.jsonl.lock
+**/*.executions.jsonl
+**/*.executions.jsonl.lock
 
 # Private Business-DNA-Arbeitsbestände; interne Methoden/Beispiele bleiben versionierbar.
 /business-dna/wissen/

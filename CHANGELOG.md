@@ -1,5 +1,21 @@
 # Änderungen
 
+## v0.2.6 – 17. November 2026
+
+Sicherheitsrelease auf Basis der Beiträge aus PR #30, #31 und #32 von Wieshof, mit ergänzender Integrationsprüfung und Regressionstests.
+
+- HMAC-signierte Freigaben und verkettete Auditprotokolle mit extern sicherbaren Prüfpunkten. Live-Mail-/SFTP-Aktionen benötigen getrennte Betriebssystemkonten, geschützte Protokolle und einen administrativ festgelegten Signaturschlüssel.
+- Eine Freigabe erlaubt genau eine Ausführung; ein neuer Schlüssel oder ein anderes Protokoll gestattet keine Wiederholung. Ads-Exporte berücksichtigen die gesamte inklusive Laufzeit.
+- Dashboard mit Zugangstoken pro Start, ausschließlich lokaler Bindung, CSP und getrennten Vorschau-Tokens. Fehlende oder gekürzte Datei-Diffs lassen sich nicht freigeben. Agentenumgebungen verwenden eine explizite Auswahl von Modellvariablen.
+- Mailplan 0.3 bindet Empfänger, Einwilligungsdaten und Anhänge mit Hashes. Einwilligungen werden unmittelbar vor dem Versand erneut geprüft. Private Dateien und Symlink-Umgehungen werden blockiert.
+- CSV-Formelschutz, sichere IMAP-Suchwerte, serialisierte Kontaktschreibzugriffe sowie begrenzte Werkzeugausgaben und Repository-Linkprüfungen.
+- PHP-Webmodule mit vertrauenswürdigen Proxy-Adressen, getrennten Formularquoten, optionalem Analytics-Limit und Hinweisen zur Token-Redaktion in Hosting-Logs.
+- CI-Actions an Commit-SHAs gebunden, Abhängigkeiten für CI mit Hashes fixiert, Dependabot ergänzt.
+
+**Upgrade:** Bestehende Mailpläne neu erzeugen und freigeben; die getrennte Ausführungsumgebung ausdrücklich einrichten. Ohne diese Einrichtung bleiben Live-Schreibaktionen gesperrt. [Migrationsanleitung](MIGRATION.md) und [Betriebseinrichtung](.suite/EXECUTOR.md) beachten.
+
+**Prüfgrenzen:** Lokale Repository-Prüfung und zusätzliche Dashboardtests bestanden. Vollständige Netzwerk-, PHP- und reale Providerprüfungen sind hier nicht abgenommen; das Release aktiviert keine Konten oder externen Aktionen.
+
 ## v0.2.5 – 28. Oktober 2026
 
 - Privater, profilgesteuerter Analytics-Wochencheck: ein einmaliger Datenlauf mit nachvollziehbaren Eingaben, gewichteten KPIs, sichtbaren Teilfehlern und optionalem Freigabestatus. Fachliche Einordnung und ausdrücklich gewünschte Zeitplanung bleiben beim vorhandenen Harness; keine neue Suite-Runtime.

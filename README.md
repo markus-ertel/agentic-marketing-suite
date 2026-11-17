@@ -1,14 +1,16 @@
 # Agentic Marketing Suite
 
+**Sicherheitsrelease v0.2.6:** Die Beiträge aus PR #30–#32 sind zusammengeführt. Externe Mail-/SFTP-Aktionen benötigen die administrativ eingerichtete [getrennte Ausführung](.suite/EXECUTOR.md). Ohne diese Einrichtung bleiben sie gesperrt. Für das Dashboard den beim Start ausgegebenen Anmeldelink verwenden. [Migration](MIGRATION.md).
+
 **Eine offene, KI-native Arbeitsumgebung für Beratung, Strategie, Kreation, Kommunikation, Umsetzung und Wirkungskontrolle in Werbung und Marketing.**
 
 [GitHub-Repository](https://github.com/markus-ertel/agentic-marketing-suite) · [MIT-Lizenz](LICENSE.md) · [Beiträge](CONTRIBUTING.md) · [Sicherheitsmeldungen](SECURITY.md) · [Installation und Migration](MIGRATION.md) · [Änderungen](CHANGELOG.md)
 
 | Dokument | Stand |
 |---|---|
-| Dokumentation | README v0.3.6 · 28. Oktober 2026 |
-| Beschriebene Softwarebasis | Suite v0.2.5 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
-| Entwicklungsstand | v0.2.5: Harness-Einstiege, Plattformexporte, Google-Leseadapter, Terminal-Freigabeübersicht, Business-DNA-Feedback und privater Wochencheck |
+| Dokumentation | README v0.3.7 · 17. November 2026 |
+| Beschriebene Softwarebasis | Suite v0.2.6 mit Branding, Business-DNA und Help & Learning mit gemeinsamer Governance-Ebene v0.2 (Änderungen: [`.suite/HISTORY.md`](.suite/HISTORY.md)) |
+| Entwicklungsstand | v0.2.6: Sicherheitsupdate für Freigaben, Dashboard, Adapter, Webmodule und CI-Lieferkette |
 | Fachbereiche | 12 eigenständig nutzbare Module |
 | Fachmethoden im Repository | 605 Markdown-Methodendateien |
 | Zielgruppe | Unternehmen, Selbstständige, Fachleute und Agenturen; **keine** Agentur- oder Kundenverwaltung als Voraussetzung |
@@ -1079,7 +1081,7 @@ Weitere Hinweise unter [`MIGRATION.md`](MIGRATION.md).
 
 ### 20.4 Historie und Änderungen
 
-Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.5 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
+Die aktuellen Modulstände unterscheiden sich. Diese README ist **eine Dokumentationsüberarbeitung**, kein Anspruch, sämtliche Fachmodule technisch auf denselben Entwicklungsstand gehoben zu haben. Suite v0.2.6 bündelt die Änderungen in [CHANGELOG.md](CHANGELOG.md); Hinweise für bestehende Installationen stehen in [MIGRATION.md](MIGRATION.md). Die Fachmodule und JSON-Verträge behalten ihre jeweiligen Versionskennungen.
 
 ---
 
