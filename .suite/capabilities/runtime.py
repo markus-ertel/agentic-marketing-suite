@@ -11,7 +11,7 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from validate_records import check
-from approval_audit import CheckError, parse_json, read_events, replay, summarize, verify_file
+from approval_audit import CheckError, load_key, parse_json, read_events, replay, summarize, verify_file, verify_signature
 
 
 class CapabilityError(ValueError):
@@ -72,7 +72,7 @@ def clean_string(value, name):
     return value
 
 
-def require_approval(log, request_id, root, plan_path, action, target, expected_sha256):
+def require_approval(log, request_id, root, plan_path, action, target, expected_sha256, key_path=None):
     """An execution preflight in the adapter, never in the dashboard.
 
     The harness additionally authenticates the actual person and authority, validates
@@ -86,6 +86,8 @@ def require_approval(log, request_id, root, plan_path, action, target, expected_
     row = next(row for row in summarize(log) if row['request_id'] == request_id)
     if row['status'] != 'approved' or event['type'] != 'approved':
         raise CapabilityError('Approval is absent, revoked or expired')
+    # Only a decision signed by the approving harness counts; an agent without the key cannot forge one.
+    verify_signature(event, load_key(path=key_path, root=root))
     actual = Path(plan_path).resolve(strict=True)
     expected = relative_file(root, request['artifact']['path'])
     if actual != expected or request['action'] != action or request['target'] != target:
@@ -94,7 +96,16 @@ def require_approval(log, request_id, root, plan_path, action, target, expected_
         raise CapabilityError('Loaded plan is not the approved file snapshot')
     verify_file(root, request)
     return {'request_id': request_id, 'approval_event_id': event['id'],
+            'approval_log': str(Path(log).resolve(strict=True)),
             'artifact_sha256': request['artifact']['sha256'], 'action': action, 'target': target}
+
+
+def bound_execution_log(approvals, execution_log):
+    """Executions live next to their approval log so a second log cannot hide a repeat."""
+    expected = Path(approvals).parent.resolve(strict=True) / 'executions.jsonl'
+    if Path(execution_log).parent.resolve(strict=True) / Path(execution_log).name != expected:
+        raise CapabilityError('Execution log must be executions.jsonl next to the approval log')
+    return expected
 
 
 @contextmanager
@@ -141,10 +152,20 @@ def append_execution(path, event):
 
 def run_once(log, key, capability, approval, operation):
     clean_string(key, 'idempotency_key')
+    approval = dict(approval)
+    source = approval.pop('approval_log', None)
+    if approval.get('approval_event_id'):
+        if source is None:
+            raise CapabilityError('Approval journal required to select canonical execution log')
+        bound_execution_log(source, log)
     with execution_lock(log) as path:
         events = read_execution_log(path)
         prior = [event for event in events if event['key'] == key]
         identity = {'capability': capability, **approval}
+        approval_event = approval.get('approval_event_id')
+        if approval_event and any(event.get('approval_event_id') == approval_event and event['key'] != key for event in events):
+            # One human approval authorizes one execution; a retry needs a new approval, not a new key.
+            raise CapabilityError('Approval was already used for an execution; request a new approval')
         if prior:
             if any(prior[0].get(field) != value for field, value in identity.items()):
                 raise CapabilityError('Idempotency key was used for a different operation')
