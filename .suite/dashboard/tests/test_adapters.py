@@ -46,6 +46,45 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(events[-1]['status'],'Fehler')
         self.assertFalse(any(e.get('status')=='abgeschlossen' for e in events))
 
+    def test_codex_file_approval_carries_paths_and_diff(self):
+        adapter, events = self.make(CodexAppServer)
+        adapter.handle({'method':'item/started','params':{'item':{'type':'fileChange','id':'fc1','changes':[
+            {'path':'marketing/plan.md','kind':{'type':'update'},'diff':'@@ -1 +1 @@\n-alt\n+neu'}]}}})
+        adapter.handle({'id':7,'method':'item/fileChange/requestApproval','params':{'itemId':'fc1','reason':'Plan anpassen'}})
+        self.assertEqual(events[-1]['changes'],[{'path':'marketing/plan.md','kind':'update','diff':'@@ -1 +1 @@\n-alt\n+neu','truncated':False}])
+        self.assertIn('accept',events[-1]['decisions'])
+        # Unknown item: the prompt says so instead of showing nothing.
+        adapter.handle({'id':8,'method':'item/fileChange/requestApproval','params':{'itemId':'unknown'}})
+        self.assertIsNone(events[-1]['changes'])
+        self.assertNotIn('accept',events[-1]['decisions'])
+        adapter.handle({'method':'item/completed','params':{'item':{'type':'fileChange','id':'fc1'}}})
+        self.assertNotIn('fc1',adapter.file_changes)
+
+    def test_truncated_diff_cannot_be_approved(self):
+        adapter, events = self.make(CodexAppServer)
+        adapter.handle({'method':'item/started','params':{'item':{'type':'fileChange','id':'big','changes':[
+            {'path':'page.html','diff':'x'*(adapter.MAX_DIFF+1)}]}}})
+        adapter.handle({'id':9,'method':'item/fileChange/requestApproval','params':{'itemId':'big'}})
+        self.assertTrue(events[-1]['changes'][0]['truncated'])
+        self.assertNotIn('accept',events[-1]['decisions'])
+
+    def test_api_cannot_override_a_missing_diff(self):
+        from unittest.mock import Mock
+        manager=Sessions({},None)
+        session=Session({'id':'test','label':'Test','adapter':'codex-appserver'},'')
+        session.adapter=Mock();manager.items[session.id]=session
+        session.emit({'type':'agent.input_requested','request_id':'1','rpc_id':1,'decisions':['decline','cancel']})
+        with self.assertRaises(ValueError):manager.respond(session.id,'1',{'decision':'accept'})
+        session.adapter.respond.assert_not_called()
+
+    def test_agent_environment_uses_explicit_model_allowlist(self):
+        from server.adapters.base import agent_environment
+        env={'PATH':'/bin','OPENAI_API_KEY':'fictional-model','GOOGLE_ADMIN_TOKEN':'fictional-secret',
+             'MAIL_PASSWORD':'fictional-secret','SUITE_APPROVAL_KEY_FILE':'/private/key','PYTHONPATH':'/untrusted'}
+        self.assertEqual(agent_environment(env),{'PATH':'/bin'})
+        self.assertEqual(agent_environment(env,allowed=['OPENAI_API_KEY','MAIL_PASSWORD','SUITE_APPROVAL_KEY_FILE']),
+                         {'PATH':'/bin','OPENAI_API_KEY':'fictional-model'})
+
     def test_multiple_sessions_replay_status_and_buffer_gap(self):
         one = Session({'id':'pi','label':'Pi','adapter':'pi-rpc'},'marketing')
         two = Session({'id':'codex','label':'Codex','adapter':'codex-appserver'},'creative')

@@ -63,7 +63,7 @@ class SecurityHTTPTests(unittest.TestCase):
         self.server.server_close()
         self.thread.join()
 
-    def request(self, method, path, host=None, origin=None, payload=None, extra_headers=()):
+    def request(self, method, path, host=None, origin=None, payload=None, extra_headers=(), token=True):
         connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
         try:
             connection.putrequest(method, path, skip_host=True)
@@ -71,6 +71,8 @@ class SecurityHTTPTests(unittest.TestCase):
                 connection.putheader('Host', host)
             if origin is not None:
                 connection.putheader('Origin', origin)
+            if token:
+                connection.putheader('X-Dashboard-Token', self.server.token)
             for key, value in extra_headers:
                 connection.putheader(key, value)
             data = json.dumps(payload).encode() if payload is not None else b''
@@ -156,6 +158,57 @@ class SecurityHTTPTests(unittest.TestCase):
         self.assertEqual(self.request('GET', '/api/raw?path=noCRM/.env.local', self.authority)[0], 403)
 
 
+    def test_requests_without_the_start_token_are_rejected(self):
+        # Host and Origin are strings any local process can set; only the printed token authorizes.
+        origin = 'http://' + self.authority
+        for method, route in (('GET', '/api/raw?path=public.txt'),
+                              ('GET', '/api/sessions'), ('POST', '/api/sessions'), ('POST', '/api/chat')):
+            with self.subTest(route=route):
+                status, _ = self.request(method, route, self.authority, origin if method == 'POST' else None,
+                                         {'profile': 'fake'} if method == 'POST' else None, token=False)
+                self.assertEqual(status, 401)
+        status, _ = self.request('GET', '/api/raw?path=public.txt', self.authority, token=False,
+                                 extra_headers=[('X-Dashboard-Token', 'wrong')])
+        self.assertEqual(status, 401)
+        self.assertEqual(self.request('GET', '/?token=wrong', self.authority, token=False)[0], 401)
+
+    def test_token_url_sets_http_only_cookie_and_cookie_authorizes(self):
+        connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
+        try:
+            connection.request('GET', '/?token=' + self.server.token + '&file=a%2Fb.md', headers={'Host': self.authority})
+            response = connection.getresponse(); response.read()
+            self.assertEqual(response.status, 303)
+            # The secret leaves the address bar; a deep link to a file survives.
+            self.assertEqual(response.getheader('Location'), '/?file=a%2Fb.md')
+            cookie = response.getheader('Set-Cookie')
+            self.assertIn('HttpOnly', cookie); self.assertIn('SameSite=Strict', cookie)
+        finally:
+            connection.close()
+        status, _ = self.request('GET', '/api/raw?path=public.txt', self.authority, token=False,
+                                 extra_headers=[('Cookie', cookie.split(';')[0])])
+        self.assertEqual(status, 200)
+
+    def test_preview_token_reads_files_only_and_keeps_deny_rules(self):
+        base = '/preview/' + self.server.preview_token + '/'
+        self.assertEqual(self.request('GET', base + 'public.txt', self.authority, token=False)[0], 200)
+        self.assertEqual(self.request('GET', '/preview/wrong/public.txt', self.authority, token=False)[0], 401)
+        self.assertEqual(self.request('GET', base + '.git/config', self.authority, token=False)[0], 403)
+        # The preview token is not an API credential.
+        self.assertEqual(self.request('GET', '/api/sessions', self.authority, token=False,
+                                      extra_headers=[('X-Dashboard-Token', self.server.preview_token)])[0], 401)
+        self.assertEqual(self.request('POST', base + 'public.txt', self.authority, 'http://' + self.authority, {}, token=False)[0], 401)
+
+    def test_dashboard_pages_cannot_be_framed(self):
+        connection = http.client.HTTPConnection('127.0.0.1', self.server.server_port, timeout=5)
+        try:
+            connection.request('GET', '/', headers={'Host': self.authority, 'X-Dashboard-Token': self.server.token})
+            response = connection.getresponse(); response.read()
+            self.assertEqual(response.getheader('X-Frame-Options'), 'DENY')
+            self.assertIn("frame-ancestors 'none'", response.getheader('Content-Security-Policy'))
+        finally:
+            connection.close()
+
+
 class SecurityFileTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -203,6 +256,24 @@ class SecurityFileTests(unittest.TestCase):
         with self.assertRaises(PermissionError):
             Files(self.root).resolve('internal-alias.md')
         self.assertTrue(Files(self.root, show_internal_files=True).resolve('internal-alias.md').is_file())
+
+    def test_non_loopback_host_requires_explicit_opt_in(self):
+        config = self.root / 'config.json'
+        for host in ('0.0.0.0', '192.168.1.10', 'example.org'):
+            config.write_text(json.dumps({'server': {'host': host}, 'suite': {'root': '.'}}))
+            with self.subTest(host=host), self.assertRaises(ValueError):
+                load_config(config)
+        config.write_text(json.dumps({'server': {'host': '0.0.0.0', 'allow_non_loopback': True}, 'suite': {'root': '.'}}))
+        with self.assertRaises(ValueError):load_config(config)
+        for host in ('127.0.0.1', 'localhost'):
+            config.write_text(json.dumps({'server': {'host': host}, 'suite': {'root': '.'}}))
+            self.assertEqual(load_config(config)['server']['host'], host)
+
+    def test_agents_do_not_inherit_adapter_credentials(self):
+        from server.adapters.base import agent_environment
+        env = agent_environment({'PATH': '/bin', 'OPENAI_API_KEY': 'agent-own', 'MAIL_PASSWORD': 'x',
+                                 'SITE_KEY_FILE': 'x', 'SITE_KNOWN_HOSTS_FILE': 'x', 'GOOGLE_OAUTH_ACCESS_TOKEN': 'x'}, allowed=['OPENAI_API_KEY'])
+        self.assertEqual(env, {'PATH': '/bin', 'OPENAI_API_KEY': 'agent-own'})
 
     def test_config_toggle_is_boolean_and_defaults_to_disabled(self):
         config = self.root / 'config.json'
