@@ -4,7 +4,7 @@ Lokaler Browser-Arbeitsraum für die bestehende Suite mit **Codex und Pi**: Date
 
 ## Start und Stop
 
-Python **3.9 oder neuer**, ein moderner Browser und für gerendertes Markdown `markdown-it-py`:
+Python **3.10 oder neuer**, ein moderner Browser und für gerendertes Markdown `markdown-it-py`:
 
 ```sh
 python3 -m venv .venv
@@ -123,7 +123,7 @@ python3 .suite/tools/check_repository.py
 node --check .suite/dashboard/web/app.js
 ```
 
-Die HTTP-Tests öffnen kurz einen lokalen Port. Automatische Tests verwenden temporäre Dateien und kontrollierte Protokollereignisse; sie benötigen keine angemeldeten Agenten. Node ist nur für die optionale JavaScript-Syntaxprüfung erforderlich. Ein eigener GitHub-Actions-Job prüft das Dashboard mit Python 3.9 und 3.13.
+Die HTTP-Tests öffnen kurz einen lokalen Port. Automatische Tests verwenden temporäre Dateien und kontrollierte Protokollereignisse; sie benötigen keine angemeldeten Agenten. Node ist nur für die optionale JavaScript-Syntaxprüfung erforderlich. Ein eigener GitHub-Actions-Job prüft das Dashboard mit Python 3.10 und 3.13. Paketvorgabe und Hash-Lockdatei werden gemeinsam installiert, damit die CI dieselbe Parserversion wie lokale Installationen prüft.
 
 Echte Providerprüfungen sind ausdrücklich getrennt und können die vorhandene Anmeldung verwenden und Providerkosten verursachen:
 
