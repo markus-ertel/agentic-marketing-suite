@@ -141,3 +141,10 @@ Ein technisches `complete` ist kein fertiges Fachurteil. Der Harness ergänzt ei
 
 
 **Zusammenführung von PR #30, #31 und #32:** Die drei Beiträge sind die Grundlage dieses Arbeitsstands. Die Live-Adapter benötigen zusätzlich die feste [Betriebspolicy](.suite/EXECUTOR.md), ein getrenntes Konto, geschützte Protokolle und einen dort registrierten Signaturschlüssel. Die Schlüsselauswahl für diese Aktionen darf nicht aus einer agentengesteuerten Umgebung stammen. Audit-Checkpoints außerhalb der Agentenreichweite sichern. Noch betrieblich zu prüfen sind Konten-/ACL-/sudo-Trennung, echte Providerintegration, Hosting-Logregeln sowie Secret-Scanning und Branch-Schutz. Diese GitHub-/Hostingeinstellungen werden durch Quelldateien nicht automatisch eingerichtet.
+
+
+## Dashboard-Abhängigkeiten nach v0.2.6
+
+Das Dashboard benötigt für `markdown-it-py>=4.3.0,<5` jetzt Python **3.10 oder neuer**. Eine bestehende Dashboard-Virtualenv mit einem unterstützten Python neu erstellen und die Abhängigkeiten erneut installieren. Die übrigen Suite-Werkzeuge behalten ihre Python-3.9-Unterstützung.
+
+Die CI installiert `requirements.lock` und `requirements.txt` gemeinsam mit `--require-hashes`; widersprüchliche Paketvorgaben oder fehlende Hashes lassen die Installation scheitern.
